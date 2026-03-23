@@ -3545,70 +3545,83 @@ function resetAndRegenerateSchedule() {
   _schedule = generateSchedule();
 }
 
-// Optimise future slots based on current traffic light ratings.
-// Red topics get 3 sessions, amber 2, green 1 — minus any already completed.
-// Past slots and ticked slots are preserved unchanged.
+// Optimise future slots.
+// Priority 1: every topic covered at least once before its exam.
+// Priority 2: red topics get extra sessions, then amber, to fill remaining slots.
+// Past, ticked, carry-over, and future past-paper slots are preserved.
 function optimiseSchedule() {
-  const todayDs = dateStr(new Date());
-  const sched   = getSchedule();
+  const todayDs  = dateStr(new Date());
+  const sched    = getSchedule();
+  const rOrder   = { red: 0, amber: 1, green: 2 };
+  const ppLabels = { physics:'Past paper — Physics', maths:'Past paper — Maths', biology:'Past paper — Biology' };
 
-  // Weights: how many total sessions each rating warrants
-  const weights     = { red: 3, amber: 2, green: 1 };
-  const ratingOrder = { red: 0, amber: 1, green: 2 };
-  const ppLabels    = { physics:'Past paper — Physics', maths:'Past paper — Maths', biology:'Past paper — Biology' };
-
-  // Count completed sessions per topic (ticked slots)
+  // Count already-completed sessions per topic
   const doneCount = { physics: {}, maths: {}, biology: {} };
   for (const s of sched) {
     if (s.isPastPaper || s.missed || !s.topic) continue;
-    if (loadTick(s.date, s.slotIndex)) {
+    if (loadTick(s.date, s.slotIndex))
       doneCount[s.subject][s.topic] = (doneCount[s.subject][s.topic] || 0) + 1;
-    }
   }
 
-  // Separate slots: keep unchanged vs reassign
+  // Separate: preserve vs reassign
   const keep     = [];
   const reassign = { physics: [], maths: [], biology: [] };
   for (const s of sched) {
-    const ticked      = loadTick(s.date, s.slotIndex);
-    const isPast      = s.date < todayDs;
-    const isCarryOver = !!s.carriedOver;
-    const isFuturePP  = s.date >= todayDs && s.isPastPaper;
-    if (isPast || ticked || isCarryOver || isFuturePP) {
-      keep.push({ ...s });
-    } else {
-      reassign[s.subject].push({ ...s });
-    }
+    const ticked     = loadTick(s.date, s.slotIndex);
+    const isPast     = s.date < todayDs;
+    const isCarry    = !!s.carriedOver;
+    const isFuturePP = s.date >= todayDs && s.isPastPaper;
+    if (isPast || ticked || isCarry || isFuturePP) keep.push({ ...s });
+    else reassign[s.subject].push({ ...s });
   }
 
-  // Build weighted queue for a subject:
-  // For each eligible topic, add it (needed − done) times, grouped by exam date, reds first.
-  function buildWeightedQueue(subj) {
+  // Build the priority queue for a subject.
+  // Structured in passes so coverage always comes before reinforcement:
+  //   Pass 1 — every uncovered topic once (sorted exam-date ASC, red→amber→green)
+  //   Pass 2 — second session for reds + ambers
+  //   Pass 3 — third session for reds
+  //   Pass 4+ — cycle reds then ambers to fill any remaining slots
+  function buildQueue(subj) {
     const eligible = getEligibleTopics(subj, todayDs);
-    const byPaper  = {};
-    for (const t of eligible) {
-      const paperKey = TOPIC_PAPER[t];
-      const examDate = paperKey ? (EXAM_DATES[paperKey] || '9999-99-99') : '9999-99-99';
-      if (!byPaper[examDate]) byPaper[examDate] = [];
-      const r         = (ratings[subj] && ratings[subj][t]) || 'red';
-      const done      = doneCount[subj][t] || 0;
-      const remaining = Math.max(0, weights[r] - done);
-      for (let i = 0; i < remaining; i++) byPaper[examDate].push({ topic: t, rating: r });
-    }
+    const r = t => (ratings[subj] && ratings[subj][t]) || 'red';
+    const d = t => doneCount[subj][t] || 0;
+
+    // Sort: earliest exam first, then red→amber→green
+    const sorted = eligible.slice().sort((a, b) => {
+      const edA = TOPIC_PAPER[a] ? (EXAM_DATES[TOPIC_PAPER[a]] || '9999') : '9999';
+      const edB = TOPIC_PAPER[b] ? (EXAM_DATES[TOPIC_PAPER[b]] || '9999') : '9999';
+      if (edA !== edB) return edA < edB ? -1 : 1;
+      return rOrder[r(a)] - rOrder[r(b)];
+    });
+
     const queue = [];
-    for (const d of Object.keys(byPaper).sort()) {
-      byPaper[d].sort((a, b) => ratingOrder[a.rating] - ratingOrder[b.rating]);
-      queue.push(...byPaper[d]);
-    }
+
+    // Pass 1: coverage — every topic at least once
+    for (const t of sorted)
+      if (d(t) < 1) queue.push(t);
+
+    // Pass 2: second session for reds and ambers
+    for (const t of sorted)
+      if (r(t) !== 'green' && d(t) < 2) queue.push(t);
+
+    // Pass 3: third session for reds
+    for (const t of sorted)
+      if (r(t) === 'red' && d(t) < 3) queue.push(t);
+
+    // Pass 4+: keep cycling reds then ambers to fill remaining slots
+    const redAmber = sorted.filter(t => r(t) !== 'green');
+    for (let i = 0; i < 4; i++)
+      for (const t of redAmber) queue.push(t);
+
     return queue;
   }
 
-  // Assign topics to each subject's future slots
+  // Assign topics to future slots
   const newSlots = [];
   for (const subj of ['physics','maths','biology']) {
     const slots = reassign[subj];
     if (!slots.length) continue;
-    const queue = buildWeightedQueue(subj);
+    const queue = buildQueue(subj);
     let ptr = 0;
 
     for (const frame of slots) {
@@ -3618,24 +3631,22 @@ function optimiseSchedule() {
       }
       let assigned = false;
       for (let offset = 0; offset < queue.length; offset++) {
-        const idx      = (ptr + offset) % queue.length;
-        const item     = queue[idx];
-        const paperKey = TOPIC_PAPER[item.topic];
-        const examDate = paperKey ? EXAM_DATES[paperKey] : null;
-        if (!examDate || frame.date < examDate) {
+        const idx = (ptr + offset) % queue.length;
+        const t   = queue[idx];
+        const pk  = TOPIC_PAPER[t];
+        const ed  = pk ? EXAM_DATES[pk] : null;
+        if (!ed || frame.date < ed) {
           ptr = (idx + 1) % queue.length;
-          newSlots.push({ ...frame, topic: item.topic, rating: item.rating, isPastPaper: false });
+          newSlots.push({ ...frame, topic: t, rating: (ratings[subj]&&ratings[subj][t])||'red', isPastPaper: false });
           assigned = true;
           break;
         }
       }
-      if (!assigned) {
+      if (!assigned)
         newSlots.push({ ...frame, topic: ppLabels[subj], rating: 'green', isPastPaper: true });
-      }
     }
   }
 
-  // Merge, sort, save
   const combined = [...keep, ...newSlots];
   combined.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.slotIndex - b.slotIndex);
   _schedule = combined;

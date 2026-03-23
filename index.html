@@ -381,6 +381,7 @@ body {
 .rev-slot.physics { background: var(--phy-bg); border-left: 2px solid var(--phy); }
 .rev-slot.maths { background: var(--mat-bg); border-left: 2px solid var(--mat); }
 .rev-slot.bio { background: var(--bio-bg); border-left: 2px solid var(--bio); }
+.rev-slot.carried-over { background: rgba(248,113,113,0.1); border-left: 2px solid var(--red); }
 
 .rev-slot-dot {
  width: 6px; height: 6px;
@@ -3794,11 +3795,11 @@ function buildTimetable() {
  const s = item.data;
  const subCls = s.subject === 'biology' ? 'bio' : s.subject === 'maths' ? 'maths' : 'physics';
  bodyHTML += `
- <div class="rev-slot ${subCls}">
- <div class="rev-slot-dot ${s.rating}"></div>
+ <div class="rev-slot ${subCls}${s.carriedOver ? ' carried-over' : ''}">
+ <div class="rev-slot-dot ${s.carriedOver ? 'red' : s.rating}"></div>
  <div class="rev-slot-text">
- <div class="rev-slot-subj">${s.subject === 'biology' ? 'Bio' : s.subject === 'maths' ? 'Maths' : 'Physics'} · ${s.time}${s.missed ? ' ' : ''}${s.isPastPaper ? ' ' : ''}</div>
- <div class="rev-slot-topic" style="${s.isPastPaper ? 'font-style:italic;' : ''}">${s.topic}</div>
+ <div class="rev-slot-subj">${s.subject === 'biology' ? 'Bio' : s.subject === 'maths' ? 'Maths' : 'Physics'} · ${s.time}${s.missed ? ' ' : ''}${s.isPastPaper ? ' ' : ''}${s.carriedOver ? ' ↩ carried over' : ''}</div>
+ <div class="rev-slot-topic" style="${s.isPastPaper ? 'font-style:italic;' : ''}${s.carriedOver ? 'color:var(--red);' : ''}">${s.topic}</div>
  <div class="rev-slot-time">${s.loc}</div>
  </div>
  </div>`;

@@ -97,8 +97,31 @@ body {
 }
 
 /* PAGE */
-.page { display: none; }
-.page.active { display: block; }
+.pages-container {
+  position: relative;
+  overflow-x: hidden;
+}
+.page {
+  display: block;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s;
+  will-change: transform, opacity;
+  min-height: 100vh;
+}
+.page.active {
+  position: relative;
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.page.slide-out-left  { transform: translateX(-30%); opacity: 0; }
+.page.slide-out-right { transform: translateX(100%);  opacity: 0; }
+.page.slide-in-left   { transform: translateX(100%);  opacity: 0; }
+.page.slide-in-right  { transform: translateX(-30%);  opacity: 0; }
 
 /* TIMETABLE PAGE */
 .tt-wrap {
@@ -2497,6 +2520,8 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 
 </div>
 
+<div class="pages-container" id="pagesContainer">
+
 <!-- TIMETABLE PAGE -->
 <div class="page active" id="page-timetable">
 <div class="tt-wrap">
@@ -2779,8 +2804,7 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 </div>
 </div>
 
-</div>
-</div>
+</div><!-- end pages-container -->
 
 
 <!-- DAY DETAIL OVERLAY -->
@@ -4994,13 +5018,59 @@ function updateTLStats() {
 }
 
 
-// PAGE SWITCHING 
-function switchPage(page) {
- document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+// PAGE SWITCHING
+var _switching = false;
+function switchPage(page, dir) {
+ if (_switching) return;
+ var pages = ['timetable','tracker','countdown','pastpapers','notes','resources'];
+ var activeEl = document.querySelector('.page.active');
+ var nextEl = document.getElementById('page-'+page);
+ if (!nextEl || activeEl === nextEl) return;
+
+ // Determine direction if not provided
+ if (dir === undefined) {
+   var curId = activeEl ? activeEl.id.replace('page-','') : '';
+   var curIdx = pages.indexOf(curId);
+   var nxtIdx = pages.indexOf(page);
+   dir = nxtIdx > curIdx ? 'left' : 'right';
+ }
+
+ // Update tabs immediately
  document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
- document.getElementById('page-'+page).classList.add('active');
  var btn = document.querySelector('.btab[data-page="'+page+'"]');
  if (btn) btn.classList.add('active');
+
+ if (!activeEl) {
+   nextEl.classList.add('active');
+   return;
+ }
+
+ _switching = true;
+ var outClass = dir === 'left' ? 'slide-out-left' : 'slide-out-right';
+ var inClass  = dir === 'left' ? 'slide-in-left'  : 'slide-in-right';
+
+ // Position incoming page off-screen without transition
+ nextEl.style.transition = 'none';
+ nextEl.classList.add(inClass);
+ nextEl.classList.add('active');
+ // Force reflow
+ nextEl.getBoundingClientRect();
+ nextEl.style.transition = '';
+
+ // Animate both
+ activeEl.classList.add(outClass);
+ nextEl.classList.remove(inClass);
+
+ function done() {
+   activeEl.classList.remove('active', outClass);
+   _switching = false;
+ }
+ nextEl.addEventListener('transitionend', function h() {
+   nextEl.removeEventListener('transitionend', h);
+   done();
+ });
+ // Fallback
+ setTimeout(done, 400);
 }
 
 function showToast(msg) {
@@ -5414,8 +5484,8 @@ document.addEventListener('touchend', function(e) {
   var currentId = activePage.id.replace('page-', '');
   var idx = swipePages.indexOf(currentId);
   if (idx === -1) return;
-  if (dx < 0 && idx < swipePages.length - 1) switchPage(swipePages[idx + 1]);
-  if (dx > 0 && idx > 0) switchPage(swipePages[idx - 1]);
+  if (dx < 0 && idx < swipePages.length - 1) switchPage(swipePages[idx + 1], 'left');
+  if (dx > 0 && idx > 0) switchPage(swipePages[idx - 1], 'right');
 }, { passive: true });
 
 // ── TIMETABLE TOPIC SEARCH ────────────────────────────────────────────────────

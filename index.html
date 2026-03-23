@@ -1,0 +1,4826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111110">
+<title>A Level Revision Planner</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1c1c1a;
+  --surface2: #242422;
+  --surface3: #2e2e2b;
+  --border: #333330;
+  --border2: #444440;
+  --text: #f0ede8;
+  --text-muted: #7a7770;
+  --text-dim: #4a4742;
+
+  --phy: #60a5fa;
+  --phy-bg: rgba(96,165,250,0.08);
+  --phy-border: rgba(96,165,250,0.25);
+  --mat: #fb923c;
+  --mat-bg: rgba(251,146,60,0.08);
+  --mat-border: rgba(251,146,60,0.25);
+  --bio: #4ade80;
+  --bio-bg: rgba(74,222,128,0.08);
+  --bio-border: rgba(74,222,128,0.25);
+  --free-col: #a78bfa;
+  --free-bg: rgba(167,139,250,0.08);
+
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green: #4ade80;
+  --exam-col: #f87171;
+
+  --radius: 6px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* TABS */
+.app-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0 1.5rem;
+  padding-top: env(safe-area-inset-top);
+  overflow-x: auto;
+}
+
+.app-tab {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.85rem 1.2rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  position: relative;
+  top: 1px;
+  white-space: nowrap;
+}
+.app-tab:hover { color: var(--text); }
+.app-tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+
+.app-tab .badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.55rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 99px;
+  vertical-align: middle;
+}
+
+/* PAGE */
+.page { display: none; }
+.page.active { display: block; }
+
+/* TIMETABLE PAGE */
+.tt-wrap {
+ max-width: 1200px;
+ margin: 0 auto;
+ padding: 2rem 1.5rem 5rem;
+}
+
+.tt-header {
+ display: flex;
+ align-items: flex-end;
+ justify-content: space-between;
+ margin-bottom: 2rem;
+ flex-wrap: wrap;
+ gap: 1rem;
+}
+
+.tt-title {
+ font-family: 'DM Serif Display', serif;
+ font-size: clamp(2.5rem, 6vw, 4.5rem);
+ font-weight: 900;
+ line-height: 0.9;
+ letter-spacing: -0.02em;
+}
+
+.tt-title em { font-style: italic; color: var(--phy); }
+
+.tt-meta {
+ font-size: 0.65rem;
+ color: var(--text-muted);
+ line-height: 2;
+ text-align: right;
+}
+
+/* Phase bar */
+.phase-bar {
+ display: grid;
+ grid-template-columns: 4fr 3fr 2fr;
+ gap: 0.5rem;
+ margin-bottom: 2rem;
+}
+
+.phase-seg {
+ padding: 0.7rem 1rem;
+ border-radius: var(--radius);
+ border: 1px solid var(--border);
+ background: var(--surface);
+}
+
+.phase-seg h4 {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+ font-size: 0.8rem;
+ margin-bottom: 0.25rem;
+}
+
+.phase-seg p { font-size: 0.62rem; color: var(--text-muted); line-height: 1.5; }
+
+/* Legend */
+.legend {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 1rem;
+ margin-bottom: 2rem;
+ padding: 0.9rem 1.2rem;
+ background: var(--surface);
+ border-radius: var(--radius);
+ border: 1px solid var(--border);
+}
+
+.leg { display:flex; align-items:center; gap:0.4rem; font-size:0.63rem; color:var(--text-muted); }
+.leg-block { width:16px; height:10px; border-radius:2px; }
+.leg-dot { width:8px; height:8px; border-radius:50%; }
+
+/* Week nav */
+.week-nav {
+ display: flex;
+ align-items: center;
+ gap: 0.4rem;
+ margin-bottom: 1.5rem;
+ flex-wrap: wrap;
+}
+
+.wk-btn {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.62rem;
+ font-weight: 600;
+ letter-spacing: 0.05em;
+ padding: 0.35rem 0.7rem;
+ border-radius: 4px;
+ border: 1px solid var(--border);
+ background: var(--surface);
+ color: var(--text-muted);
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.wk-btn:hover { border-color: var(--border2); color: var(--text); }
+.wk-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+.wk-btn.has-exam { border-color: var(--exam-col); color: var(--exam-col); }
+.wk-btn.has-exam.active { background: var(--exam-col); color: #fff; }
+
+/* Week panel */
+.week-panel { display: none; }
+.week-panel.active { display: block; }
+
+.week-info {
+ display: flex;
+ align-items: baseline;
+ gap: 1rem;
+ margin-bottom: 0.8rem;
+ flex-wrap: wrap;
+}
+
+.week-info h2 {
+ font-family: 'DM Serif Display', serif;
+ font-size: 1.8rem;
+ font-weight: 900;
+ line-height: 1;
+}
+
+.week-dates { font-size: 0.65rem; color: var(--text-muted); }
+
+.week-focus-bar {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-left: 3px solid var(--phy);
+ padding: 0.6rem 1rem;
+ font-size: 0.68rem;
+ color: var(--text-muted);
+ line-height: 1.6;
+ margin-bottom: 1rem;
+ border-radius: 0 var(--radius) var(--radius) 0;
+}
+.week-focus-bar strong { color: var(--text); }
+
+/* Exam alerts */
+.exam-strip {
+ display: flex;
+ flex-wrap: wrap;
+ gap: 0.5rem;
+ margin-bottom: 1rem;
+}
+
+.exam-chip {
+ font-size: 0.62rem;
+ padding: 0.3rem 0.8rem;
+ border: 1px solid var(--exam-col);
+ color: var(--exam-col);
+ border-radius: 99px;
+ letter-spacing: 0.05em;
+}
+
+/* CALENDAR GRID */
+.cal-grid {
+ display: grid;
+ grid-template-columns: repeat(7, 1fr);
+ gap: 0.5rem;
+ margin-bottom: 1.5rem;
+}
+
+.cal-day-header {
+ font-size: 0.6rem;
+ font-weight: 600;
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+ color: var(--text-dim);
+ text-align: center;
+ padding: 0.4rem 0;
+}
+
+.cal-cell {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ overflow: hidden;
+ min-height: 180px;
+ display: flex;
+ flex-direction: column;
+ transition: border-color 0.15s;
+}
+
+.cal-cell:hover { border-color: var(--border2); }
+.cal-cell.is-sat { opacity: 0.5; background: var(--bg); }
+.cal-cell.is-exam { border-color: var(--exam-col); border-width: 2px; }
+.cal-cell.is-sunday { border-color: var(--border2); }
+.cal-cell.is-today { border-color: var(--text) !important; border-width: 2px !important; }
+.cal-cell.is-today .cal-date-row { background: var(--text); }
+.cal-cell.is-today .cal-date-num { color: var(--bg); }
+.cal-today-label { display: none; }
+.cal-cell.is-today .cal-today-label { display: inline-block; font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.1rem 0.4rem; border-radius: 99px; background: rgba(15,15,15,0.3); color: var(--bg); }
+
+.cal-date-row {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ padding: 0.45rem 0.6rem 0.4rem;
+ border-bottom: 1px solid var(--border);
+ background: var(--surface2);
+ flex-shrink: 0;
+}
+
+.cal-date-num {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 900;
+ font-size: 1.1rem;
+ line-height: 1;
+}
+
+.cal-exam-badge {
+ font-size: 0.52rem;
+ color: var(--exam-col);
+ letter-spacing: 0.05em;
+ text-align: right;
+ line-height: 1.3;
+}
+
+.cal-body {
+ padding: 0.4rem;
+ flex: 1;
+ display: flex;
+ flex-direction: column;
+ gap: 0.25rem;
+ overflow: hidden;
+}
+
+/* School lesson pill */
+.lesson-pill {
+ font-size: 0.56rem;
+ padding: 0.2rem 0.45rem;
+ border-radius: 3px;
+ font-weight: 600;
+ letter-spacing: 0.05em;
+ flex-shrink: 0;
+}
+.lesson-pill.phy { background: var(--phy-bg); color: var(--phy); border: 1px solid var(--phy-border); }
+.lesson-pill.mat { background: var(--mat-bg); color: var(--mat); border: 1px solid var(--mat-border); }
+.lesson-pill.bio { background: var(--bio-bg); color: var(--bio); border: 1px solid var(--bio-border); }
+.lesson-pill.other { background: var(--free-bg); color: var(--free-col); border: 1px solid rgba(192,132,252,0.3); }
+
+/* Divider between lessons and revision */
+.cal-divider {
+ height: 1px;
+ background: var(--border);
+ margin: 0.1rem 0;
+ flex-shrink: 0;
+}
+
+/* Revision slot in calendar */
+.rev-slot {
+ display: flex;
+ align-items: flex-start;
+ gap: 0.3rem;
+ padding: 0.25rem 0.4rem;
+ border-radius: 3px;
+ flex-shrink: 0;
+}
+.rev-slot.physics { background: var(--phy-bg); border-left: 2px solid var(--phy); }
+.rev-slot.maths { background: var(--mat-bg); border-left: 2px solid var(--mat); }
+.rev-slot.bio { background: var(--bio-bg); border-left: 2px solid var(--bio); }
+
+.rev-slot-dot {
+ width: 6px; height: 6px;
+ border-radius: 50%;
+ flex-shrink: 0;
+ margin-top: 2px;
+}
+.rev-slot-dot.red { background: var(--red); }
+.rev-slot-dot.amber { background: var(--amber); }
+.rev-slot-dot.green { background: var(--green); }
+
+.rev-slot-text { flex: 1; }
+.rev-slot-subj {
+ font-size: 0.52rem;
+ font-weight: 600;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ margin-bottom: 0.1rem;
+}
+.rev-slot.physics .rev-slot-subj { color: var(--phy); }
+.rev-slot.maths .rev-slot-subj { color: var(--mat); }
+.rev-slot.bio .rev-slot-subj { color: var(--bio); }
+
+.rev-slot-topic { font-size: 0.6rem; line-height: 1.3; color: var(--text); }
+.rev-slot-time { font-size: 0.52rem; color: var(--text-dim); margin-top: 0.1rem; }
+
+.rest-label {
+ font-size: 0.6rem;
+ color: var(--text-dim);
+ text-align: center;
+ padding: 1rem 0;
+ letter-spacing: 0.08em;
+}
+
+/* TRAFFIC LIGHT PAGE */
+.tl-wrap {
+ max-width: 1000px;
+ margin: 0 auto;
+ padding: 2rem 1.5rem 5rem;
+}
+
+.tl-header {
+ margin-bottom: 2rem;
+}
+
+.tl-header h2 {
+ font-family: 'DM Serif Display', serif;
+ font-size: clamp(2rem, 5vw, 3.5rem);
+ font-weight: 900;
+ line-height: 0.95;
+ margin-bottom: 0.5rem;
+}
+
+.tl-header h2 em { font-style: italic; color: var(--green); }
+
+.tl-header p { font-size: 0.7rem; color: var(--text-muted); line-height: 1.6; }
+
+/* Summary cards */
+.tl-summary {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 1rem;
+ margin-bottom: 2rem;
+}
+
+.tl-stat {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ padding: 1.2rem;
+ text-align: center;
+}
+
+.tl-stat .num {
+ font-family: 'DM Serif Display', serif;
+ font-size: 2.5rem;
+ font-weight: 900;
+ line-height: 1;
+ margin-bottom: 0.3rem;
+}
+
+.tl-stat .lbl { font-size: 0.62rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.tl-stat.red-s .num { color: var(--red); }
+.tl-stat.amb-s .num { color: var(--amber); }
+.tl-stat.grn-s .num { color: var(--green); }
+
+/* Subject tabs within TL */
+.tl-subject-tabs {
+ display: flex;
+ gap: 0.5rem;
+ margin-bottom: 1.5rem;
+}
+
+.tl-sub-btn {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.68rem;
+ font-weight: 600;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ padding: 0.5rem 1.2rem;
+ border-radius: var(--radius);
+ border: 1px solid var(--border);
+ background: var(--surface);
+ color: var(--text-muted);
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.tl-sub-btn:hover { color: var(--text); border-color: var(--border2); }
+.tl-sub-btn.active.phy { background: var(--phy-bg); border-color: var(--phy-border); color: var(--phy); }
+.tl-sub-btn.active.mat { background: var(--mat-bg); border-color: var(--mat-border); color: var(--mat); }
+.tl-sub-btn.active.bio { background: var(--bio-bg); border-color: var(--bio-border); color: var(--bio); }
+
+
+/* TL Search */
+.tl-search-wrap {
+  margin-bottom: 1rem;
+}
+
+.tl-search-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 0.65rem 1rem;
+  color: var(--text);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tl-search-input:focus { border-color: var(--phy); }
+.tl-search-input::placeholder { color: var(--text-dim); }
+
+.tl-topic-row.tl-hidden { display: none; }
+.tl-section.tl-section-hidden { display: none; }
+
+/* TL subject panel */
+.tl-subject-panel { display: none; }
+.tl-subject-panel.active { display: block; }
+
+/* Progress bar */
+.tl-prog-wrap { margin-bottom: 1.5rem; }
+.tl-prog-label {
+ display: flex;
+ justify-content: space-between;
+ font-size: 0.62rem;
+ color: var(--text-muted);
+ margin-bottom: 0.4rem;
+}
+.tl-prog-bar {
+ height: 4px;
+ background: var(--surface3);
+ border-radius: 99px;
+ overflow: hidden;
+}
+.tl-prog-inner {
+ height: 100%;
+ background: linear-gradient(90deg, var(--red), var(--amber), var(--green));
+ border-radius: 99px;
+ transition: width 0.4s ease;
+}
+
+/* Section */
+.tl-section {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.75rem;
+ overflow: hidden;
+}
+
+.tl-sec-header {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ padding: 0.65rem 1rem;
+ background: var(--surface2);
+ border-bottom: 1px solid var(--border);
+ cursor: pointer;
+ user-select: none;
+ font-size: 0.68rem;
+ font-weight: 600;
+ letter-spacing: 0.06em;
+ color: var(--text-muted);
+ transition: color 0.15s;
+}
+.tl-sec-header:hover { color: var(--text); }
+.tl-sec-chevron { transition: transform 0.2s; font-size: 0.55rem; }
+.tl-section.collapsed .tl-sec-chevron { transform: rotate(-90deg); }
+.tl-section.collapsed .tl-sec-body { display: none; }
+
+.tl-sec-body { padding: 0.35rem; }
+
+/* Topic row */
+.tl-topic-row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.45rem 0.65rem;
+ border-radius: 5px;
+ gap: 0.8rem;
+ transition: background 0.12s;
+}
+.tl-topic-row:hover { background: var(--surface2); }
+.tl-topic-row.is-red { background: rgba(255,68,68,0.05); }
+.tl-topic-row.is-amber { background: rgba(255,170,0,0.05); }
+.tl-topic-row.is-green { background: rgba(34,197,94,0.05); }
+
+.tl-topic-name { flex: 1; font-size: 0.75rem; line-height: 1.35; }
+
+.tl-btns { display: flex; gap: 0.3rem; flex-shrink: 0; }
+
+.tl-btn {
+ width: 26px; height: 26px;
+ border-radius: 50%;
+ border: 2px solid transparent;
+ cursor: pointer;
+ display: flex; align-items: center; justify-content: center;
+ background: var(--surface3);
+ transition: all 0.15s;
+ opacity: 0.3;
+}
+.tl-btn::after {
+ content: '';
+ width: 9px; height: 9px;
+ border-radius: 50%;
+}
+.tl-btn.red::after { background: var(--red); }
+.tl-btn.amber::after { background: var(--amber); }
+.tl-btn.green::after { background: var(--green); }
+.tl-btn:hover { opacity: 0.7; transform: scale(1.1); }
+.tl-btn.sel { opacity: 1; }
+.tl-btn.sel.red { border-color: var(--red); background: rgba(255,68,68,0.15); box-shadow: 0 0 8px rgba(255,68,68,0.25); }
+.tl-btn.sel.amber { border-color: var(--amber); background: rgba(255,170,0,0.15); box-shadow: 0 0 8px rgba(255,170,0,0.25); }
+.tl-btn.sel.green { border-color: var(--green); background: rgba(34,197,94,0.15); box-shadow: 0 0 8px rgba(34,197,94,0.25); }
+
+/* TODAY PAGE */
+.today-wrap {
+ max-width: 700px;
+ margin: 0 auto;
+ padding: 2rem 1.5rem 5rem;
+}
+
+.today-date-banner {
+ margin-bottom: 2rem;
+}
+
+.today-date-banner .day-label {
+ font-size: 0.68rem;
+ letter-spacing: 0.2em;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ margin-bottom: 0.3rem;
+}
+
+.today-date-banner h2 {
+ font-family: 'DM Serif Display', serif;
+ font-size: clamp(2.2rem, 6vw, 3.5rem);
+ font-weight: 900;
+ line-height: 0.95;
+ letter-spacing: -0.02em;
+}
+
+.today-date-banner h2 em { font-style: italic; color: var(--phy); }
+
+.today-progress {
+ display: flex;
+ align-items: center;
+ gap: 1rem;
+ margin-top: 0.8rem;
+ flex-wrap: wrap;
+}
+
+.today-progress-bar-wrap {
+ flex: 1;
+ min-width: 120px;
+ background: var(--surface3);
+ border-radius: 99px;
+ height: 5px;
+ overflow: hidden;
+}
+
+.today-progress-bar {
+ height: 100%;
+ background: var(--green);
+ border-radius: 99px;
+ transition: width 0.4s ease;
+}
+
+.today-progress-label {
+ font-size: 0.65rem;
+ color: var(--text-muted);
+ white-space: nowrap;
+}
+
+/* Exam warning banner */
+.today-exam-banner {
+ background: rgba(255,68,68,0.08);
+ border: 1px solid var(--exam-col);
+ border-radius: var(--radius);
+ padding: 1rem 1.2rem;
+ margin-bottom: 1.5rem;
+ display: flex;
+ align-items: center;
+ gap: 0.8rem;
+}
+
+.today-exam-banner .exam-icon { font-size: 1.5rem; }
+.today-exam-banner .exam-text { flex: 1; }
+.today-exam-banner .exam-text strong { display: block; color: var(--exam-col); font-size: 0.85rem; margin-bottom: 0.2rem; }
+.today-exam-banner .exam-text span { font-size: 0.68rem; color: var(--text-muted); }
+
+/* School lessons section */
+.today-section-label {
+ font-size: 0.62rem;
+ letter-spacing: 0.15em;
+ text-transform: uppercase;
+ color: var(--text-dim);
+ margin-bottom: 0.6rem;
+ margin-top: 1.5rem;
+}
+
+/* Revision slot card */
+.today-slot-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.75rem;
+ overflow: hidden;
+ transition: border-color 0.2s;
+}
+
+.today-slot-card.done {
+ border-color: var(--green);
+ opacity: 0.7;
+}
+
+.today-slot-card.done .today-slot-body {
+ background: rgba(34,197,94,0.04);
+}
+
+.today-slot-header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.65rem 1rem;
+ border-bottom: 1px solid var(--border);
+ background: var(--surface2);
+}
+
+.today-slot-subj {
+ font-size: 0.65rem;
+ font-weight: 600;
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+}
+
+.today-slot-subj.physics { color: var(--phy); }
+.today-slot-subj.maths { color: var(--mat); }
+.today-slot-subj.bio { color: var(--bio); }
+
+.today-slot-time-loc {
+ font-size: 0.62rem;
+ color: var(--text-muted);
+}
+
+.today-slot-body {
+ padding: 1rem;
+ display: flex;
+ align-items: flex-start;
+ gap: 1rem;
+}
+
+.today-slot-info { flex: 1; }
+
+.today-slot-topic {
+ font-size: 0.95rem;
+ line-height: 1.35;
+ margin-bottom: 0.4rem;
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+}
+
+.today-slot-meta {
+ display: flex;
+ align-items: center;
+ gap: 0.6rem;
+ flex-wrap: wrap;
+}
+
+.today-rating-dot {
+ width: 8px; height: 8px;
+ border-radius: 50%;
+ flex-shrink: 0;
+}
+.today-rating-dot.red { background: var(--red); }
+.today-rating-dot.amber { background: var(--amber); }
+.today-rating-dot.green { background: var(--green); }
+
+.today-rating-label {
+ font-size: 0.62rem;
+ color: var(--text-muted);
+}
+
+/* Tick button */
+.tick-btn {
+ width: 42px; height: 42px;
+ border-radius: 50%;
+ border: 2px solid var(--border2);
+ background: var(--surface3);
+ color: var(--text-muted);
+ font-size: 1.1rem;
+ cursor: pointer;
+ display: flex; align-items: center; justify-content: center;
+ flex-shrink: 0;
+ transition: all 0.2s;
+}
+.tick-btn:hover { border-color: var(--green); color: var(--green); transform: scale(1.08); }
+.tick-btn.ticked { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+
+/* Done overlay on topic */
+.done-strike {
+ text-decoration: line-through;
+ opacity: 0.5;
+}
+
+/* Rest day screen */
+.rest-screen {
+ text-align: center;
+ padding: 4rem 2rem;
+}
+
+.rest-screen .rest-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+.rest-screen h3 {
+ font-family: 'DM Serif Display', serif;
+ font-size: 2rem;
+ font-weight: 900;
+ margin-bottom: 0.5rem;
+}
+
+.rest-screen p { font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; }
+
+/* Rating prompt modal */
+.modal-overlay {
+ position: fixed;
+ inset: 0;
+ background: rgba(0,0,0,0.7);
+ z-index: 200;
+ display: none;
+ align-items: center;
+ justify-content: center;
+ padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+ background: var(--surface);
+ border: 1px solid var(--border2);
+ border-radius: 12px;
+ padding: 1.5rem;
+ max-width: 420px;
+ width: 100%;
+}
+
+.modal-box h3 {
+ font-family: 'DM Serif Display', serif;
+ font-size: 1.3rem;
+ font-weight: 900;
+ margin-bottom: 0.3rem;
+}
+
+.modal-box .modal-topic {
+ font-size: 0.75rem;
+ color: var(--text-muted);
+ margin-bottom: 1.2rem;
+ line-height: 1.5;
+}
+
+.modal-rating-btns {
+ display: flex;
+ gap: 0.75rem;
+ margin-bottom: 1rem;
+}
+
+.modal-rating-btn {
+ flex: 1;
+ padding: 0.75rem;
+ border-radius: var(--radius);
+ border: 2px solid transparent;
+ cursor: pointer;
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.68rem;
+ font-weight: 600;
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+ transition: all 0.15s;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ gap: 0.3rem;
+}
+
+.modal-rating-btn .dot {
+ width: 12px; height: 12px;
+ border-radius: 50%;
+}
+
+.modal-rating-btn.red-btn { background: rgba(255,68,68,0.1); color: var(--red); border-color: rgba(255,68,68,0.3); }
+.modal-rating-btn.amb-btn { background: rgba(255,170,0,0.1); color: var(--amber); border-color: rgba(255,170,0,0.3); }
+.modal-rating-btn.grn-btn { background: rgba(34,197,94,0.1); color: var(--green); border-color: rgba(34,197,94,0.3); }
+.modal-rating-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+.modal-skip {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.62rem;
+ color: var(--text-dim);
+ background: none;
+ border: none;
+ cursor: pointer;
+ width: 100%;
+ text-align: center;
+ padding: 0.4rem;
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+}
+.modal-skip:hover { color: var(--text-muted); }
+
+.today-school-pill {
+ display: flex;
+ align-items: center;
+ gap: 0.8rem;
+ padding: 0.65rem 1rem;
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.5rem;
+}
+.today-school-pill .pill-time { font-size: 0.65rem; color: var(--text-muted); min-width: 40px; }
+.today-school-pill .pill-name { font-size: 0.78rem; font-weight: 600; }
+.today-school-pill .pill-name.phy { color: var(--phy); }
+.today-school-pill .pill-name.mat { color: var(--mat); }
+.today-school-pill .pill-name.bio { color: var(--bio); }
+.today-school-pill .pill-name.other { color: var(--free-col); }
+
+/* COUNTDOWN PAGE */
+.countdown-grid {
+ display: flex;
+ flex-direction: column;
+ gap: 0.75rem;
+ margin-bottom: 2rem;
+}
+
+.countdown-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ padding: 1rem 1.2rem;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 1rem;
+ flex-wrap: wrap;
+}
+
+.countdown-card.physics-card { border-left: 3px solid var(--phy); }
+.countdown-card.maths-card { border-left: 3px solid var(--mat); }
+.countdown-card.bio-card { border-left: 3px solid var(--bio); }
+
+.countdown-card .exam-name {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+ font-size: 0.95rem;
+ margin-bottom: 0.2rem;
+}
+
+.countdown-card .exam-date-label {
+ font-size: 0.62rem;
+ color: var(--text-muted);
+}
+
+.countdown-card .days-left {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 900;
+ font-size: 2rem;
+ line-height: 1;
+ text-align: right;
+}
+
+.countdown-card .days-left span {
+ display: block;
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.58rem;
+ font-weight: 400;
+ color: var(--text-muted);
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+ margin-top: 0.2rem;
+}
+
+.countdown-card.physics-card .days-left { color: var(--phy); }
+.countdown-card.maths-card .days-left { color: var(--mat); }
+.countdown-card.bio-card .days-left { color: var(--bio); }
+
+.countdown-card .lessons-left {
+ font-size: 0.68rem;
+ color: var(--text-muted);
+ text-align: right;
+}
+
+.countdown-card .lessons-left strong { color: var(--text); font-size: 0.85rem; }
+
+.countdown-section-label {
+ font-size: 0.62rem;
+ letter-spacing: 0.15em;
+ text-transform: uppercase;
+ color: var(--text-dim);
+ margin: 1.5rem 0 0.6rem;
+}
+
+/* PAST PAPERS PAGE */
+.pp-stats-bar {
+ display: flex;
+ gap: 1rem;
+ margin-bottom: 1.5rem;
+ flex-wrap: wrap;
+}
+
+.pp-stat {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ padding: 0.75rem 1.2rem;
+ text-align: center;
+ min-width: 70px;
+}
+
+.pp-stat-num {
+ display: block;
+ font-family: 'DM Serif Display', serif;
+ font-size: 1.8rem;
+ font-weight: 900;
+ line-height: 1;
+ margin-bottom: 0.2rem;
+}
+
+.pp-stat-num.done-col { color: var(--green); }
+.pp-stat-num.inprog-col { color: var(--amber); }
+
+.pp-stat-lbl {
+ font-size: 0.58rem;
+ color: var(--text-muted);
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+}
+
+.pp-year-group { margin-bottom: 1.5rem; }
+
+.pp-year-label {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 900;
+ font-size: 1.1rem;
+ color: var(--text-muted);
+ margin-bottom: 0.5rem;
+ padding-bottom: 0.4rem;
+ border-bottom: 1px solid var(--border);
+}
+
+.pp-row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.75rem 1rem;
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.4rem;
+ gap: 1rem;
+ flex-wrap: wrap;
+ transition: border-color 0.15s;
+}
+
+.pp-row.done { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.04); }
+.pp-row.inprogress { border-color: rgba(255,170,0,0.3); background: rgba(255,170,0,0.04); }
+
+.pp-row-left { flex: 1; }
+
+.pp-row-name {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+ font-size: 0.95rem;
+ margin-bottom: 0.3rem;
+}
+
+.pp-row-meta {
+ display: flex;
+ align-items: center;
+ gap: 0.6rem;
+ flex-wrap: wrap;
+}
+
+.pp-status-badge {
+ font-size: 0.6rem;
+ padding: 0.15rem 0.5rem;
+ border-radius: 99px;
+ letter-spacing: 0.05em;
+}
+
+.pp-status-badge.done { background: rgba(34,197,94,0.15); color: var(--green); }
+.pp-status-badge.inprog { background: rgba(255,170,0,0.15); color: var(--amber); }
+.pp-status-badge.notstarted { color: var(--text-dim); }
+
+.pp-score-display {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 700;
+ font-size: 0.85rem;
+ color: var(--green);
+}
+
+.pp-date-display {
+ font-size: 0.6rem;
+ color: var(--text-dim);
+}
+
+.pp-row-actions {
+ display: flex;
+ gap: 0.4rem;
+ flex-wrap: wrap;
+ flex-shrink: 0;
+}
+
+.pp-action-btn {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.6rem;
+ font-weight: 600;
+ letter-spacing: 0.04em;
+ padding: 0.35rem 0.7rem;
+ border-radius: 5px;
+ border: 1px solid var(--border2);
+ background: var(--surface2);
+ color: var(--text-muted);
+ cursor: pointer;
+ transition: all 0.15s;
+ white-space: nowrap;
+}
+
+.pp-action-btn:hover { color: var(--text); border-color: var(--text); }
+.pp-action-btn.done-btn { border-color: rgba(34,197,94,0.4); color: var(--green); background: rgba(34,197,94,0.08); }
+.pp-action-btn.done-btn:hover { background: rgba(34,197,94,0.15); }
+.pp-action-btn.inprog-btn { border-color: rgba(255,170,0,0.4); color: var(--amber); background: rgba(255,170,0,0.08); }
+.pp-action-btn.inprog-btn:hover { background: rgba(255,170,0,0.15); }
+.pp-action-btn.reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+.pp-subject-tabs {
+ display: flex;
+ gap: 0.5rem;
+ margin-bottom: 1.5rem;
+ flex-wrap: wrap;
+}
+
+.pp-sub-btn {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.68rem;
+ font-weight: 600;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ padding: 0.5rem 1.2rem;
+ border-radius: var(--radius);
+ border: 1px solid var(--border);
+ background: var(--surface);
+ color: var(--text-muted);
+ cursor: pointer;
+ transition: all 0.15s;
+}
+.pp-sub-btn:hover { color: var(--text); border-color: var(--border2); }
+.pp-sub-btn.active.phy { background: var(--phy-bg); border-color: var(--phy-border); color: var(--phy); }
+.pp-sub-btn.active.mat { background: var(--mat-bg); border-color: var(--mat-border); color: var(--mat); }
+.pp-sub-btn.active.bio { background: var(--bio-bg); border-color: var(--bio-border); color: var(--bio); }
+
+.pp-subject-panel { display: none; }
+.pp-subject-panel.active { display: block; }
+
+.pp-card {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.75rem;
+ overflow: hidden;
+}
+
+.pp-card.done-card { opacity: 0.55; border-style: dashed; }
+
+.pp-card-header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.7rem 1rem;
+ background: var(--surface2);
+ border-bottom: 1px solid var(--border);
+ gap: 0.5rem;
+ flex-wrap: wrap;
+}
+
+.pp-card-title {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+ font-size: 0.9rem;
+}
+
+.pp-card-year {
+ font-size: 0.62rem;
+ color: var(--text-muted);
+ letter-spacing: 0.08em;
+}
+
+.pp-recommended {
+ font-size: 0.58rem;
+ padding: 0.2rem 0.55rem;
+ border-radius: 99px;
+ background: rgba(255,170,0,0.15);
+ color: var(--amber);
+ border: 1px solid rgba(255,170,0,0.3);
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+}
+
+.pp-card-body {
+ padding: 0.8rem 1rem;
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 1rem;
+ flex-wrap: wrap;
+}
+
+.pp-links { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.pp-link {
+ font-size: 0.65rem;
+ padding: 0.35rem 0.8rem;
+ border-radius: 5px;
+ border: 1px solid var(--border2);
+ color: var(--text-muted);
+ text-decoration: none;
+ transition: all 0.15s;
+ background: var(--surface3);
+}
+.pp-link:hover { color: var(--text); border-color: var(--text); }
+.pp-link.qp { border-color: var(--phy-border); color: var(--phy); background: var(--phy-bg); }
+.pp-link.ms { border-color: var(--bio-border); color: var(--bio); background: var(--bio-bg); }
+
+.pp-mark-btn {
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.65rem;
+ font-weight: 600;
+ padding: 0.4rem 0.9rem;
+ border-radius: 5px;
+ border: 1px solid var(--green);
+ background: rgba(34,197,94,0.1);
+ color: var(--green);
+ cursor: pointer;
+ transition: all 0.15s;
+ white-space: nowrap;
+}
+.pp-mark-btn:hover { background: rgba(34,197,94,0.2); }
+
+/* Score modal */
+.score-modal-overlay {
+ position: fixed;
+ inset: 0;
+ background: rgba(0,0,0,0.7);
+ z-index: 300;
+ display: none;
+ align-items: center;
+ justify-content: center;
+ padding: 1rem;
+}
+.score-modal-overlay.open { display: flex; }
+
+.score-modal {
+ background: var(--surface);
+ border: 1px solid var(--border2);
+ border-radius: 12px;
+ padding: 1.5rem;
+ max-width: 360px;
+ width: 100%;
+}
+
+.score-modal h3 {
+ font-family: 'DM Serif Display', serif;
+ font-size: 1.2rem;
+ font-weight: 900;
+ margin-bottom: 0.25rem;
+}
+
+.score-modal .score-paper-label {
+ font-size: 0.68rem;
+ color: var(--text-muted);
+ margin-bottom: 1.2rem;
+}
+
+.score-field label {
+ display: block;
+ font-size: 0.62rem;
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ margin-bottom: 0.4rem;
+}
+
+.score-field input {
+ width: 100%;
+ background: var(--surface2);
+ border: 1px solid var(--border2);
+ border-radius: var(--radius);
+ padding: 0.65rem 1rem;
+ color: var(--text);
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.85rem;
+ outline: none;
+ margin-bottom: 1rem;
+ transition: border-color 0.2s;
+}
+.score-field input:focus { border-color: var(--green); }
+
+.score-save-btn {
+ width: 100%;
+ padding: 0.75rem;
+ background: var(--green);
+ color: #fff;
+ border: none;
+ border-radius: var(--radius);
+ font-family: 'DM Serif Display', serif;
+ font-size: 0.95rem;
+ font-weight: 600;
+ cursor: pointer;
+ margin-bottom: 0.5rem;
+ transition: all 0.2s;
+}
+.score-save-btn:hover { background: #34d468; }
+
+.score-cancel-btn {
+ width: 100%;
+ background: none;
+ border: none;
+ color: var(--text-dim);
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.62rem;
+ cursor: pointer;
+ padding: 0.3rem;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+}
+
+/* Completed papers list */
+.completed-paper-row {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0.55rem 0.8rem;
+ background: var(--surface2);
+ border-radius: 5px;
+ margin-bottom: 0.4rem;
+ gap: 0.5rem;
+ flex-wrap: wrap;
+}
+
+.completed-paper-name { font-size: 0.72rem; flex: 1; }
+.completed-paper-score { font-family: 'DM Serif Display', serif; font-weight: 700; font-size: 0.9rem; color: var(--green); }
+.completed-paper-date { font-size: 0.6rem; color: var(--text-dim); }
+
+.completed-paper-remove {
+ background: none;
+ border: none;
+ color: var(--text-dim);
+ cursor: pointer;
+ font-size: 0.7rem;
+ padding: 0.2rem 0.4rem;
+ border-radius: 3px;
+ transition: color 0.15s;
+}
+.completed-paper-remove:hover { color: var(--red); }
+
+/* RESOURCES PAGE */
+.resources-grid {
+ display: grid;
+ grid-template-columns: repeat(3, 1fr);
+ gap: 1.2rem;
+}
+
+@media (max-width: 700px) {
+ .resources-grid { grid-template-columns: 1fr; }
+}
+
+.resources-col {
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ overflow: hidden;
+}
+
+.resources-col-header {
+ display: flex;
+ align-items: center;
+ gap: 0.6rem;
+ padding: 0.85rem 1rem;
+ font-family: 'DM Serif Display', serif;
+ font-weight: 700;
+ font-size: 1rem;
+ border-bottom: 1px solid var(--border);
+ background: var(--surface2);
+}
+
+.resources-col-dot {
+ width: 10px;
+ height: 10px;
+ border-radius: 50%;
+ flex-shrink: 0;
+}
+
+.resources-col-body {
+ padding: 0.75rem;
+ display: flex;
+ flex-direction: column;
+ gap: 0.4rem;
+}
+
+.resources-group-label {
+ font-size: 0.58rem;
+ letter-spacing: 0.12em;
+ text-transform: uppercase;
+ color: var(--text-dim);
+ margin-top: 0.6rem;
+ margin-bottom: 0.1rem;
+ padding-left: 0.2rem;
+}
+
+.resources-group-label:first-child { margin-top: 0; }
+
+.res-btn {
+ display: block;
+ width: 100%;
+ padding: 0.65rem 0.9rem;
+ border-radius: 6px;
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.7rem;
+ font-weight: 600;
+ text-decoration: none;
+ text-align: left;
+ transition: all 0.15s;
+ border: 1px solid transparent;
+ cursor: pointer;
+}
+
+/* Physics solid */
+.phy-btn { background: var(--phy-bg); color: var(--phy); border-color: var(--phy-border); }
+.phy-btn:hover { background: rgba(74,158,255,0.2); }
+
+/* Physics outline (papers) */
+.phy-btn-outline { background: transparent; color: var(--phy); border-color: var(--phy-border); opacity: 0.75; }
+.phy-btn-outline:hover { opacity: 1; background: var(--phy-bg); }
+
+/* Maths solid */
+.mat-btn { background: var(--mat-bg); color: var(--mat); border-color: var(--mat-border); }
+.mat-btn:hover { background: rgba(255,159,74,0.2); }
+
+/* Maths outline */
+.mat-btn-outline { background: transparent; color: var(--mat); border-color: var(--mat-border); opacity: 0.75; }
+.mat-btn-outline:hover { opacity: 1; background: var(--mat-bg); }
+
+/* Bio solid */
+.bio-btn { background: var(--bio-bg); color: var(--bio); border-color: var(--bio-border); }
+.bio-btn:hover { background: rgba(74,255,159,0.2); }
+
+/* Bio outline */
+.bio-btn-outline { background: transparent; color: var(--bio); border-color: var(--bio-border); opacity: 0.75; }
+.bio-btn-outline:hover { opacity: 1; background: var(--bio-bg); }
+
+/* DAY DETAIL OVERLAY */
+.day-overlay {
+ position: fixed;
+ inset: 0;
+ background: rgba(0,0,0,0.75);
+ z-index: 250;
+ display: none;
+ align-items: flex-end;
+ justify-content: center;
+ padding: 1rem;
+}
+
+.day-overlay.open {
+ display: flex;
+}
+
+@media (min-width: 600px) {
+ .day-overlay { align-items: center; }
+}
+
+.day-overlay-box {
+ background: var(--surface);
+ border: 1px solid var(--border2);
+ border-radius: 14px;
+ width: 100%;
+ max-width: 560px;
+ max-height: 88vh;
+ display: flex;
+ flex-direction: column;
+ overflow: hidden;
+}
+
+.day-overlay-header {
+ display: flex;
+ align-items: flex-start;
+ justify-content: space-between;
+ padding: 1.2rem 1.4rem 1rem;
+ border-bottom: 1px solid var(--border);
+ flex-shrink: 0;
+ background: var(--surface2);
+}
+
+.day-overlay-label {
+ font-size: 0.62rem;
+ letter-spacing: 0.15em;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ margin-bottom: 0.25rem;
+}
+
+.day-overlay-title {
+ font-family: 'DM Serif Display', serif;
+ font-weight: 900;
+ font-size: 1.6rem;
+ line-height: 1;
+}
+
+.day-overlay-close {
+ background: var(--surface3);
+ border: 1px solid var(--border2);
+ color: var(--text-muted);
+ width: 32px;
+ height: 32px;
+ border-radius: 50%;
+ cursor: pointer;
+ font-size: 0.8rem;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ flex-shrink: 0;
+ transition: all 0.15s;
+}
+.day-overlay-close:hover { color: var(--text); border-color: var(--text); background: var(--surface2); }
+
+.day-overlay-body {
+ overflow-y: auto;
+ padding: 1rem 1.2rem 1.5rem;
+ flex: 1;
+}
+
+/* Progress bar in overlay */
+.overlay-progress-wrap {
+ margin-bottom: 1.2rem;
+}
+
+.overlay-progress-bar-outer {
+ background: var(--surface3);
+ border-radius: 99px;
+ height: 5px;
+ overflow: hidden;
+ margin-top: 0.4rem;
+}
+
+.overlay-progress-bar-inner {
+ height: 100%;
+ background: var(--green);
+ border-radius: 99px;
+ transition: width 0.4s ease;
+}
+
+.overlay-progress-label {
+ font-size: 0.62rem;
+ color: var(--text-muted);
+ display: flex;
+ justify-content: space-between;
+}
+
+/* Make calendar cells clickable */
+.cal-cell { cursor: pointer; }
+.cal-cell.is-sat { cursor: default; }
+.cal-cell:not(.is-sat):hover { border-color: var(--text); }
+
+/* PP TERMINAL */
+.pp-terminal {
+ background: var(--surface);
+ border: 1px solid var(--border2);
+ border-radius: var(--radius);
+ overflow: hidden;
+ margin-bottom: 0.5rem;
+}
+
+.pp-terminal-header {
+ background: var(--surface2);
+ border-bottom: 1px solid var(--border);
+ padding: 0.75rem 1.1rem;
+ font-family: 'DM Serif Display', serif;
+ font-weight: 600;
+ font-size: 0.9rem;
+}
+
+.pp-terminal-body {
+ padding: 1.1rem;
+ display: flex;
+ flex-direction: column;
+ gap: 0.9rem;
+}
+
+.pp-form-row {
+ display: flex;
+ gap: 0.75rem;
+ flex-wrap: wrap;
+}
+
+.pp-form-field {
+ flex: 1;
+ min-width: 120px;
+}
+
+.pp-form-label {
+ display: block;
+ font-size: 0.6rem;
+ letter-spacing: 0.1em;
+ text-transform: uppercase;
+ color: var(--text-muted);
+ margin-bottom: 0.4rem;
+}
+
+.pp-select, .pp-input {
+ width: 100%;
+ background: var(--surface2);
+ border: 1px solid var(--border2);
+ border-radius: 6px;
+ padding: 0.6rem 0.8rem;
+ color: var(--text);
+ font-family: Helvetica, Arial, sans-serif;
+ font-size: 0.78rem;
+ outline: none;
+ transition: border-color 0.2s;
+ appearance: none;
+ -webkit-appearance: none;
+}
+
+.pp-select:focus, .pp-input:focus { border-color: var(--phy); }
+.pp-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.8rem center; padding-right: 2rem; }
+
+.pp-form-actions {
+ display: flex;
+ gap: 0.6rem;
+ flex-wrap: wrap;
+}
+
+/* Completed row */
+.pp-completed-row {
+ display: flex;
+ align-items: center;
+ gap: 0.8rem;
+ padding: 0.75rem 1rem;
+ background: var(--surface);
+ border: 1px solid var(--border);
+ border-radius: var(--radius);
+ margin-bottom: 0.4rem;
+ flex-wrap: wrap;
+}
+
+.pp-completed-badge {
+ font-size: 0.6rem;
+ font-weight: 600;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ padding: 0.25rem 0.6rem;
+ border-radius: 99px;
+ border: 1px solid;
+ flex-shrink: 0;
+}
+
+.pp-completed-info { flex: 1; }
+.pp-completed-name { font-family: 'DM Serif Display', serif; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+.pp-completed-meta { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.pp-time-display { font-size: 0.62rem; color: var(--text-muted); }
+
+
+/* PP Timer */
+.pp-timer-display {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2.8rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 1.2rem 0 0.8rem;
+  color: var(--text);
+  line-height: 1;
+}
+
+.pp-timer-controls {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.pp-timer-btn {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.55rem 1.4rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.03em;
+}
+
+.pp-timer-btn.start { border-color: var(--green); color: var(--green); background: var(--bio-bg); }
+.pp-timer-btn.start:hover { background: rgba(74,222,128,0.15); }
+.pp-timer-btn.pause { border-color: var(--amber); color: var(--amber); background: var(--mat-bg); }
+.pp-timer-btn.pause:hover { background: rgba(251,146,60,0.15); }
+.pp-timer-btn.finish { border-color: var(--phy); color: var(--phy); background: var(--phy-bg); }
+.pp-timer-btn.finish:hover { background: rgba(96,165,250,0.15); }
+.pp-timer-btn.reset-t { border-color: var(--border2); color: var(--text-muted); }
+.pp-timer-btn.reset-t:hover { border-color: var(--red); color: var(--red); }
+
+.pp-timer-status {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.pp-score-entry {
+  display: none;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.pp-score-entry.visible { display: block; }
+
+/* Edit time modal */
+.edit-time-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.edit-time-overlay.open { display: flex; }
+.edit-time-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 1.4rem;
+  max-width: 320px;
+  width: 100%;
+}
+.edit-time-box h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+.edit-time-box p { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+
+
+/* ── BOTTOM TAB BAR ── */
+.bottom-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.btab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.2rem;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btab:hover { color: var(--text-muted); }
+.btab.active { color: var(--phy); }
+.btab svg { flex-shrink: 0; }
+
+/* Push page content above the tab bar */
+.page { padding-bottom: 80px; }
+
+/* Hide old top tabs entirely */
+.app-tabs { display: none !important; }
+
+/* Today button */
+
+
+/* ── NOTES PAGE ── */
+.note-canvas-wrap {
+  background: #1a1a1a;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.note-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.note-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.note-card-header:hover { background: var(--surface3); }
+
+.note-card-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.note-card-date {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  margin-right: 1rem;
+}
+
+.note-card-body {
+  display: none;
+  padding: 1rem;
+}
+
+.note-card-body.open { display: block; }
+
+.note-card-img {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+body.light-theme .note-canvas-wrap,
+body.light-theme #note-canvas { background: #f0ede8 !important; }
+
+
+/* ── NOTE TOOLBAR ── */
+.note-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.note-toolbar-left,
+.note-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.note-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: var(--surface3);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.note-tool-btn:hover { color: var(--text); border-color: var(--text); }
+.note-tool-btn.active {
+  background: var(--phy-bg);
+  border-color: var(--phy-border);
+  color: var(--phy);
+}
+
+.note-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.note-action-btn:hover { color: var(--text); border-color: var(--text); }
+
+.note-stroke-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-dim);
+  margin-left: 0.3rem;
+}
+
+.note-stroke-slider {
+  width: 70px;
+  accent-color: var(--phy);
+  cursor: pointer;
+}
+
+
+
+/* Slot done/missed buttons */
+.slot-done-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: var(--surface3);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.slot-done-btn:hover { border-color: var(--green); color: var(--green); }
+.slot-done-btn.slot-done-active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(74,222,128,0.3);
+}
+
+.slot-miss-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  background: var(--surface3);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.slot-miss-btn:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.1); }
+.slot-miss-btn.slot-missed-active {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(248,113,113,0.3);
+}
+
+/* Missed button */
+.missed-btn {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(248,113,113,0.4);
+  background: rgba(248,113,113,0.08);
+  color: var(--red);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.missed-btn:hover { background: rgba(248,113,113,0.18); }
+
+.today-slot-card.is-missed {
+  border-color: rgba(248,113,113,0.4);
+  opacity: 0.65;
+}
+.today-slot-card.is-missed .today-slot-topic { text-decoration: line-through; }
+
+
+/* ── SCORE GRAPH ── */
+.score-graph-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1rem 0.8rem;
+  margin-bottom: 1.5rem;
+}
+.score-graph-title {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+}
+.score-graph-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.score-graph-tab {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.score-graph-tab.active.phy { background: var(--phy-bg); border-color: var(--phy-border); color: var(--phy); }
+.score-graph-tab.active.mat { background: var(--mat-bg); border-color: var(--mat-border); color: var(--mat); }
+.score-graph-tab.active.bio { background: var(--bio-bg); border-color: var(--bio-border); color: var(--bio); }
+.score-graph-canvas-wrap { position: relative; width: 100%; }
+.score-graph-canvas { width: 100%; display: block; }
+.score-graph-empty {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2rem 0;
+}
+
+
+/* ── TIMETABLE TOPIC SEARCH ── */
+.tt-search-wrap {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.tt-search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 0.7rem 1rem;
+  color: var(--text);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.tt-search-input:focus { border-color: var(--phy); }
+.tt-search-input::placeholder { color: var(--text-dim); }
+
+.tt-search-results {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tt-search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  flex-wrap: wrap;
+}
+.tt-search-result-row:hover { border-color: var(--border2); background: var(--surface2); }
+
+.tt-result-topic {
+  font-size: 0.82rem;
+  font-weight: 500;
+  flex: 1;
+  min-width: 150px;
+}
+
+.tt-result-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tt-result-subj {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+}
+.tt-result-subj.phy { background: var(--phy-bg); color: var(--phy); border: 1px solid var(--phy-border); }
+.tt-result-subj.mat { background: var(--mat-bg); color: var(--mat); border: 1px solid var(--mat-border); }
+.tt-result-subj.bio { background: var(--bio-bg); color: var(--bio); border: 1px solid var(--bio-border); }
+
+.tt-result-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.tt-result-week {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+.tt-result-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tt-result-dot.red   { background: var(--red); }
+.tt-result-dot.amber { background: var(--amber); }
+.tt-result-dot.green { background: var(--green); }
+
+.tt-search-no-results {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  padding: 0.5rem 0;
+}
+
+/* Toast */
+.toast {
+ position: fixed;
+ bottom: 2rem;
+ left: 50%;
+ transform: translateX(-50%) translateY(80px);
+ background: var(--surface2);
+ border: 1px solid var(--border2);
+ color: var(--text);
+ font-size: 0.72rem;
+ padding: 0.65rem 1.4rem;
+ border-radius: 99px;
+ z-index: 999;
+ transition: transform 0.3s;
+ white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 768px) {
+ .cal-grid { grid-template-columns: repeat(2, 1fr); }
+ .cal-day-header:nth-child(n+3) { display: none; }
+ .phase-bar { grid-template-columns: 1fr; }
+ .tl-summary { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 500px) {
+ .cal-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- App tabs -->
+<div class="bottom-tab-bar" id="bottomTabBar">
+  <button class="btab active" onclick="switchPage('timetable')" data-page="timetable">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Timetable</span>
+  </button>
+  <button class="btab" onclick="switchPage('tracker')" data-page="tracker">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+    <span>Tracker</span>
+  </button>
+  <button class="btab" onclick="switchPage('countdown')" data-page="countdown">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Countdown</span>
+  </button>
+  <button class="btab" onclick="switchPage('pastpapers')" data-page="pastpapers">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>Papers</span>
+  </button>
+  <button class="btab" onclick="switchPage('notes')" data-page="notes">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span>Notes</span>
+  </button>
+  <button class="btab" onclick="switchPage('resources')" data-page="resources">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <span>Resources</span>
+  </button>
+
+</div>
+
+<!-- TIMETABLE PAGE -->
+<div class="page active" id="page-timetable">
+<div class="tt-wrap">
+
+ <div class="tt-header">
+ <div class="tt-title">A Level<br><em>Revision</em><br>Planner</div>
+ <div class="tt-meta">
+ Start: 23 Mar 2026 &nbsp;·&nbsp; 13 weeks<br>
+ Physics P1: 20 May &nbsp;·&nbsp; Last exam: 18 Jun<br>
+ 3 × 1hr sessions/day<br>
+ Saturdays = rest days
+ </div>
+ </div>
+
+
+
+ <div class="week-nav" id="weekNav"></div>
+
+ <div class="tt-search-wrap">
+  <input class="tt-search-input" id="ttSearchInput" type="text" placeholder="Search topics..." oninput="searchTopics(this.value)">
+  <div id="ttSearchResults" class="tt-search-results"></div>
+ </div>
+
+ <div id="weekPanels"></div>
+
+</div>
+</div>
+
+<!-- TRACKER PAGE -->
+<div class="page" id="page-tracker">
+<div class="tl-wrap">
+
+ <div class="tl-header">
+ <h2>Traffic Light<br><em>Tracker</em></h2>
+ </div>
+
+ <div class="tl-summary">
+ <div class="tl-stat red-s"><div class="num" id="tl-total-red">0</div><div class="lbl">Need work</div></div>
+ <div class="tl-stat amb-s"><div class="num" id="tl-total-amber">0</div><div class="lbl">Almost there</div></div>
+ <div class="tl-stat grn-s"><div class="num" id="tl-total-green">0</div><div class="lbl">Confident</div></div>
+ </div>
+
+ <div class="tl-subject-tabs">
+ <button class="tl-sub-btn active phy" onclick="switchTLSubject('physics')">Physics</button>
+ <button class="tl-sub-btn mat" onclick="switchTLSubject('maths')">Maths</button>
+ <button class="tl-sub-btn bio" onclick="switchTLSubject('biology')">Biology</button>
+ </div>
+
+ <div class="tl-search-wrap">
+   <input class="tl-search-input" type="text" id="tlSearchInput" placeholder="Search topics..." oninput="filterTLTopics(this.value)">
+ </div>
+ <div id="tl-panels"></div>
+
+</div>
+</div>
+
+<!-- COUNTDOWN PAGE -->
+<div class="page" id="page-countdown">
+<div class="today-wrap">
+ <div id="countdown-content"><!-- filled by JS --></div>
+</div>
+</div>
+
+<!-- PAST PAPERS PAGE -->
+<div class="page" id="page-pastpapers">
+<div class="today-wrap">
+ <div id="pp-content"><!-- filled by JS --></div>
+</div>
+</div>
+
+
+
+<!-- Finish score overlay -->
+<div class="edit-time-overlay" id="finishScoreOverlay">
+  <div class="edit-time-box">
+    <h3>Paper Complete</h3>
+    <p id="finishTimeDisplay" style="color:var(--text-muted);font-size:0.72rem;margin-bottom:0.75rem"></p>
+    <div class="score-field">
+      <label class="pp-form-label">Your score</label>
+      <input class="pp-input" type="text" id="finishScoreInput" placeholder="e.g. 45/60">
+    </div>
+    <button class="score-save-btn" style="margin-top:0.5rem" onclick="confirmFinish()">Save</button>
+    <button class="score-cancel-btn" onclick="cancelFinish()">Cancel</button>
+  </div>
+</div>
+
+<!-- Edit time modal -->
+<div class="edit-time-overlay" id="editTimeOverlay">
+  <div class="edit-time-box">
+    <h3>Edit Time</h3>
+    <p>Change the recorded time for this paper (in minutes).</p>
+    <div class="score-field">
+      <label class="pp-form-label">Time (mins)</label>
+      <input class="pp-input" type="number" id="editTimeInput" min="1" max="600" placeholder="">
+    </div>
+    <button class="score-save-btn" style="margin-top:0.5rem" onclick="saveEditTime()">Save</button>
+    <button class="score-cancel-btn" onclick="closeEditTime()">Cancel</button>
+  </div>
+</div>
+
+
+<!-- RESOURCES PAGE -->
+<div class="page" id="page-resources">
+<div class="today-wrap" style="max-width:1100px">
+ <div class="today-date-banner">
+ <h2>Revision <em>Resources</em></h2>
+ </div>
+ <div class="resources-grid">
+
+ <!-- PHYSICS -->
+ <div class="resources-col">
+ <div class="resources-col-header phy-header">
+ <span class="resources-col-dot" style="background:var(--phy)"></span>
+ Physics
+ </div>
+ <div class="resources-col-body">
+ <div class="resources-group-label">Reference</div>
+ <a class="res-btn phy-btn" href="https://pmt.physicsandmathstutor.com/download/Physics/A-level/Past-Papers/AQA/Data%20Sheet.pdf" target="_blank"> Physics Formula Sheet</a>
+
+ <div class="resources-group-label">Topic Practice</div>
+ <a class="res-btn phy-btn" href="https://www.physicsandmathstutor.com/physics-revision/a-level-aqa/" target="_blank"> Physics Topic Questions</a>
+
+ <div class="resources-group-label">Past Papers</div>
+ <a class="res-btn phy-btn" href="https://www.physicsandmathstutor.com/past-papers/a-level-physics/" target="_blank"> All Physics Past Papers</a>
+ <a class="res-btn phy-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-physics/aqa-paper-1/" target="_blank">Paper 1</a>
+ <a class="res-btn phy-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-physics/aqa-paper-2/" target="_blank">Paper 2</a>
+ <a class="res-btn phy-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-physics/aqa-paper-3/" target="_blank">Paper 3</a>
+ </div>
+ </div>
+
+ <!-- MATHS -->
+ <div class="resources-col">
+ <div class="resources-col-header mat-header">
+ <span class="resources-col-dot" style="background:var(--mat)"></span>
+ Maths
+ </div>
+ <div class="resources-col-body">
+ <div class="resources-group-label">Reference</div>
+ <a class="res-btn mat-btn" href="https://www.mymathscloud.com/api/download/modules/A-Level/Syllabi-and-Formula-Booklets/AQA/AQA%20FORMULAE%20BOOKLET%20AS%20AND%20A%20LEVEL.pdf?id=18113870" target="_blank"> Maths Formula Sheet</a>
+
+ <div class="resources-group-label">Topic Practice</div>
+ <a class="res-btn mat-btn" href="https://www.physicsandmathstutor.com/maths-revision/a-level-aqa/" target="_blank"> Maths Topic Questions</a>
+
+ <div class="resources-group-label">Past Papers</div>
+ <a class="res-btn mat-btn" href="https://www.physicsandmathstutor.com/maths-revision/a-level-aqa/papers/" target="_blank"> All Maths Past Papers</a>
+ <a class="res-btn mat-btn-outline" href="https://www.physicsandmathstutor.com/maths-revision/a-level-aqa/papers/" target="_blank">Paper 1</a>
+ <a class="res-btn mat-btn-outline" href="https://www.physicsandmathstutor.com/maths-revision/a-level-aqa/papers/" target="_blank">Paper 2</a>
+ <a class="res-btn mat-btn-outline" href="https://www.physicsandmathstutor.com/maths-revision/a-level-aqa/papers/" target="_blank">Paper 3</a>
+ </div>
+ </div>
+
+ <!-- BIOLOGY -->
+ <div class="resources-col">
+ <div class="resources-col-header bio-header">
+ <span class="resources-col-dot" style="background:var(--bio)"></span>
+ Biology
+ </div>
+ <div class="resources-col-body">
+ <div class="resources-group-label">Topic Practice</div>
+ <a class="res-btn bio-btn" href="https://www.physicsandmathstutor.com/biology-revision/a-level-ocr-a/" target="_blank"> Biology Topic Questions</a>
+
+ <div class="resources-group-label">Past Papers</div>
+ <a class="res-btn bio-btn" href="https://www.physicsandmathstutor.com/past-papers/a-level-biology/" target="_blank"> All Biology Past Papers</a>
+ <a class="res-btn bio-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-biology/ocr-a-paper-1/" target="_blank">Paper 1</a>
+ <a class="res-btn bio-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-biology/ocr-a-paper-2/" target="_blank">Paper 2</a>
+ <a class="res-btn bio-btn-outline" href="https://www.physicsandmathstutor.com/past-papers/a-level-biology/ocr-a-paper-3/" target="_blank">Paper 3</a>
+ </div>
+ </div>
+
+ </div>
+</div>
+</div>
+
+
+<!-- NOTES PAGE -->
+<div class="page" id="page-notes">
+<div class="today-wrap" style="max-width:900px">
+  <div class="today-date-banner" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <h2>My <em>Notes</em></h2>
+    <button class="pp-timer-btn start" onclick="showNewNoteForm()">New Note</button>
+  </div>
+
+  <!-- New note form -->
+  <div id="note-form" style="display:none;margin-bottom:1.5rem">
+    <div class="pp-terminal">
+      <div class="pp-terminal-header">New Note</div>
+      <div class="pp-terminal-body">
+        <div class="pp-form-field" style="margin-bottom:0.75rem">
+          <label class="pp-form-label">Title</label>
+          <input class="pp-input" type="text" id="note-title-input" placeholder="Note title...">
+        </div>
+        <label class="pp-form-label" style="margin-bottom:0.4rem;display:block">Write with Apple Pencil</label>
+        <div class="note-canvas-wrap">
+          <div class="note-toolbar">
+            <div class="note-toolbar-left">
+              <button class="note-tool-btn active" id="note-btn-pen" onclick="setNoteTool('pen')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Pen
+              </button>
+              <button class="note-tool-btn" id="note-btn-eraser" onclick="setNoteTool('eraser')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 20 5 20"/><path d="M6.5 12.5L10 9l7 7-3.5 3.5a2 2 0 0 1-2.83 0l-4.17-4.17a2 2 0 0 1 0-2.83z"/></svg>
+                Eraser
+              </button>
+              <div class="note-stroke-wrap">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
+                <input type="range" id="note-stroke-size" min="1" max="20" value="2" class="note-stroke-slider">
+              </div>
+            </div>
+            <div class="note-toolbar-right">
+              <button class="note-action-btn" onclick="undoNoteCanvas()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+                Undo
+              </button>
+              <button class="note-action-btn" onclick="clearNoteCanvas()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                Clear
+              </button>
+            </div>
+          </div>
+          <canvas id="note-canvas" class="pq-canvas"></canvas>
+        </div>
+        <div class="pp-form-actions" style="margin-top:0.75rem">
+          <button class="pp-timer-btn start" onclick="saveNote()">Save Note</button>
+          <button class="pp-action-btn reset-btn" onclick="cancelNote()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes list -->
+  <div id="notes-list"></div>
+</div>
+</div>
+
+</div>
+</div>
+
+
+<!-- DAY DETAIL OVERLAY -->
+<div class="day-overlay" id="dayOverlay">
+ <div class="day-overlay-box">
+ <div class="day-overlay-header">
+ <div>
+ <div class="day-overlay-label" id="dayOverlayLabel"></div>
+ <div class="day-overlay-title" id="dayOverlayTitle"></div>
+ </div>
+ <button class="day-overlay-close" onclick="closeDayOverlay()">X</button>
+ </div>
+ <div class="day-overlay-body" id="dayOverlayBody"></div>
+ </div>
+</div>
+
+
+<!-- Rating prompt modal -->
+<div class="modal-overlay" id="ratingModal">
+ <div class="modal-box">
+ <h3>How did it go?</h3>
+ <div class="modal-topic" id="modalTopicText"></div>
+ <div class="modal-rating-btns">
+ <button class="modal-rating-btn red-btn" onclick="submitModalRating('red')">
+ <div class="dot" style="background:var(--red)"></div>Still struggling
+ </button>
+ <button class="modal-rating-btn amb-btn" onclick="submitModalRating('amber')">
+ <div class="dot" style="background:var(--amber)"></div>Getting there
+ </button>
+ <button class="modal-rating-btn grn-btn" onclick="submitModalRating('green')">
+ <div class="dot" style="background:var(--green)"></div>Confident now
+ </button>
+ </div>
+ <button class="modal-skip" onclick="closeModal()">Skip — keep rating unchanged</button>
+ </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// TOPIC DATA 
+const SUBJECTS = {
+ physics: {
+ label: 'Physics', cls: 'phy',
+ sections: [
+ { name: 'Measurements & Errors', topics: ['SI units & prefixes','Random & systematic errors','Accuracy & precision','Uncertainty (absolute, fractional, %)','Combining uncertainties','Graphs & gradients'] },
+ { name: 'Particles & Radiation', topics: ['Atomic structure','Stable & unstable nuclei','Particles & antiparticles','Particle interactions (photons, leptons, quarks)','Conservation laws (charge, baryon, lepton)','Quarks & hadrons','Strange particles','Feynman diagrams','Photoelectric effect','Energy levels & photon emission','Wave-particle duality'] },
+ { name: 'Waves', topics: ['Progressive waves (amplitude, frequency, wavelength)','Transverse & longitudinal waves','Superposition','Stationary waves','Diffraction','Two-source interference',"Young's double slit",'Diffraction grating',"Refraction & Snell's law",'Total internal reflection','Polarisation'] },
+ { name: 'Mechanics & Materials', topics: ['Scalars & vectors','Moments','Motion along a line (SUVAT)','Projectile motion',"Newton's laws",'Momentum & impulse','Work, energy & power','Conservation of energy','Bulk properties of solids (stress, strain, Young\'s modulus)','Force-extension graphs & Hooke\'s law'] },
+ { name: 'Electricity', topics: ['Charge, current & potential difference','Resistance & Ohm\'s law','I-V characteristics','Resistivity','Power & energy','Series & parallel circuits','EMF & internal resistance','Potential dividers',"Kirchhoff's laws"] },
+ { name: 'Further Mechanics', topics: ['Circular motion (angular velocity, centripetal acceleration)','Simple harmonic motion (SHM) — defining equation','SHM energy','Forced oscillations & resonance','Damping'] },
+ { name: 'Thermal Physics', topics: ['Thermal energy transfer','Internal energy','Ideal gas law (pV=nRT)','Kinetic theory of gases','Boltzmann constant','Specific heat capacity','Specific latent heat'] },
+ { name: 'Fields', topics: ['Gravitational fields (uniform & radial)','Gravitational potential',"Orbits & Kepler's law",'Electric fields (uniform & radial)','Electric potential','Capacitors (charge, energy, time constant)','Capacitor charging & discharging','Magnetic fields (force on wire & charge)',"Electromagnetic induction & Faraday's law","Lenz's law",'Transformers','Alternating current (RMS, peak)'] },
+ { name: 'Nuclear Physics', topics: ['Radioactive decay (alpha, beta, gamma)','Activity & half-life','Radioactive decay equations','Nuclear radius','Nuclear binding energy','Fission & fusion','Background radiation'] },
+ { name: 'Astrophysics', topics: ['Telescopes (refracting, reflecting, radio)','Imaging & detecting radiation','Distances in space (parsec, light year, AU)','Stellar luminosity & flux','Hertzsprung-Russell diagram','Stellar evolution (main sequence, giants, white dwarfs, neutron stars)','Supernovae & black holes','Doppler effect & redshift',"Hubble's law & the expanding universe",'Cosmic microwave background radiation','Dark matter & dark energy'] },
+ ]
+ },
+ maths: {
+ label: 'Maths', cls: 'mat',
+ sections: [
+ { name: 'Pure — Algebra & Functions', topics: ['Algebraic expressions & manipulation','Quadratics','Equations & inequalities','Graphs & transformations','Straight-line graphs','Circles','Algebraic methods (proof, factor theorem)','Partial fractions','Functions & mappings','Composite & inverse functions','Modulus function'] },
+ { name: 'Pure — Coordinate Geometry', topics: ['Straight-line graphs','Circles (equations, chords, tangents)'] },
+ { name: 'Pure — Sequences & Series', topics: ['Arithmetic sequences & series','Geometric sequences & series','Sigma notation','Binomial expansion (positive integer)','Binomial expansion (any rational n)'] },
+ { name: 'Pure — Trigonometry', topics: ['Trigonometric ratios & graphs','Trig identities (sin²+cos²=1 etc.)','Solving trig equations','Radians, arc length, sector area','Small angle approximations','Reciprocal trig functions','Inverse trig functions','Addition formulae','Double angle formulae','R cos/sin(θ ± α) form'] },
+ { name: 'Pure — Exponentials & Logarithms', topics: ['Exponential functions & graphs','Logarithms & laws','Natural log (ln) & e','Solving exponential equations','Modelling with exponentials'] },
+ { name: 'Pure — Differentiation', topics: ['Differentiation from first principles','Differentiating polynomials','Chain rule','Product rule','Quotient rule','Differentiating trig functions','Differentiating exponentials & logs','Implicit differentiation','Parametric differentiation','Second derivatives & stationary points','Rates of change'] },
+ { name: 'Pure — Integration', topics: ['Indefinite integration','Definite integration','Area under a curve','Trapezium rule','Integration by substitution','Integration by parts','Integrating trig & exponentials','Integrating partial fractions','Differential equations (separable)'] },
+ { name: 'Pure — Vectors', topics: ['2D vectors','3D vectors','Magnitude & direction','Position vectors','Scalar (dot) product'] },
+ { name: 'Pure — Numerical Methods', topics: ['Locating roots (sign change)','Newton-Raphson method','Fixed-point iteration','Iteration convergence'] },
+ { name: 'Pure — Proof', topics: ['Proof by deduction','Proof by exhaustion','Disproof by counter-example','Proof by contradiction'] },
+ { name: 'Statistics', topics: ['Statistical sampling','Data representation (histograms, box plots, cumulative frequency)','Measures of location & spread','Coding data','Correlation & regression','Probability basics','Conditional probability','Discrete probability distributions','Binomial distribution','Normal distribution','Hypothesis testing (binomial)','Hypothesis testing (normal)'] },
+ { name: 'Mechanics', topics: ['Kinematics (constant acceleration, SUVAT)','Kinematics (variable acceleration, calculus)',"Forces & Newton's laws",'Connected particles','Moments','Vectors in mechanics','Projectile motion'] },
+ ]
+ },
+ biology: {
+ label: 'Biology', cls: 'bio',
+ sections: [
+ { name: 'Module 2 — Foundations in Biology', topics: ['Cell structure (prokaryotic & eukaryotic)','Microscopy & magnification','Cell fractionation & ultracentrifugation','Biological molecules — carbohydrates','Biological molecules — lipids','Biological molecules — proteins & amino acids','Enzyme action (lock & key, induced fit)','Enzyme inhibition (competitive & non-competitive)','Factors affecting enzyme activity','Water & its properties','DNA & RNA structure','ATP structure & hydrolysis','Cell membranes (fluid mosaic model)','Membrane transport (diffusion, osmosis, active transport)','Mitosis & cell cycle','Meiosis'] },
+ { name: 'Module 3 — Exchange & Transport', topics: ['Surface area to volume ratio','Gas exchange (insects, fish, mammals)','Alveoli structure & function','Ventilation in mammals','Haemoglobin & oxygen dissociation curve','Bohr effect','Blood vessels (arteries, veins, capillaries)','Heart structure & cardiac cycle','Pressure changes in the heart','Xylem structure & transpiration','Factors affecting transpiration','Translocation & phloem'] },
+ { name: 'Module 4 — Biodiversity, Evolution & Disease', topics: ['Pathogens & disease (bacteria, viruses, fungi)','Non-specific immune response','Specific immune response (B & T lymphocytes)','Antibodies & antigens','Vaccination','HIV & immune system','Biodiversity (species richness, Simpson\'s index)','Sampling techniques','Classification & taxonomy',"Darwin's natural selection",'Speciation (allopatric & sympatric)','Genetic drift'] },
+ { name: 'Module 5 — Communication, Homeostasis & Energy', topics: ['Homeostasis principles','Thermoregulation','Blood glucose regulation (insulin & glucagon)','Diabetes (Type 1 & 2)','Kidney structure & ultrafiltration','Selective reabsorption','Osmoregulation & ADH','Resting potential','Action potential & propagation','Synaptic transmission','Neuromuscular junction','Muscle structure (sarcomere, sliding filament)','Photosynthesis — light dependent reactions','Photosynthesis — Calvin cycle','Limiting factors in photosynthesis','Respiration — glycolysis','Krebs cycle','Oxidative phosphorylation','Anaerobic respiration'] },
+ { name: 'Module 6 — Genetics, Evolution & Ecosystems', topics: ['DNA replication','Transcription & translation','Gene mutations','Genetic code (codons, degeneracy)','Epigenetics','Monohybrid inheritance','Dihybrid inheritance','Codominance & multiple alleles','Sex linkage','Hardy-Weinberg principle','Ecosystems — trophic levels & food webs','Energy flow & efficiency','Nitrogen cycle','Carbon cycle','Succession','Conservation methods','DNA technology (PCR, gel electrophoresis)','Genetic engineering & recombinant DNA','GMOs','Stem cells','Cloning'] },
+ ]
+ }
+};
+
+// Initial ratings from user's input
+const INITIAL_RATINGS = {
+ physics: {
+ 'SI units & prefixes':'green','Random & systematic errors':'amber','Accuracy & precision':'amber','Uncertainty (absolute, fractional, %)':'red','Combining uncertainties':'red','Graphs & gradients':'green',
+ 'Atomic structure':'green','Stable & unstable nuclei':'amber','Particles & antiparticles':'red','Particle interactions (photons, leptons, quarks)':'red','Conservation laws (charge, baryon, lepton)':'red','Quarks & hadrons':'red','Strange particles':'red','Feynman diagrams':'red','Photoelectric effect':'red','Energy levels & photon emission':'amber','Wave-particle duality':'red',
+ 'Progressive waves (amplitude, frequency, wavelength)':'green','Transverse & longitudinal waves':'green','Superposition':'amber','Stationary waves':'green','Diffraction':'red','Two-source interference':'red',"Young's double slit":'red','Diffraction grating':'red',"Refraction & Snell's law":'red','Total internal reflection':'red','Polarisation':'amber',
+ 'Scalars & vectors':'green','Moments':'amber','Motion along a line (SUVAT)':'green','Projectile motion':'amber',"Newton's laws":'amber','Momentum & impulse':'amber','Work, energy & power':'amber','Conservation of energy':'amber','Bulk properties of solids (stress, strain, Young\'s modulus)':'red','Force-extension graphs & Hooke\'s law':'red',
+ 'Charge, current & potential difference':'amber','Resistance & Ohm\'s law':'red','I-V characteristics':'red','Resistivity':'red','Power & energy':'red','Series & parallel circuits':'red','EMF & internal resistance':'red','Potential dividers':'red',"Kirchhoff's laws":'red',
+ 'Circular motion (angular velocity, centripetal acceleration)':'amber','Simple harmonic motion (SHM) — defining equation':'amber','SHM energy':'red','Forced oscillations & resonance':'red','Damping':'red',
+ 'Thermal energy transfer':'red','Internal energy':'red','Ideal gas law (pV=nRT)':'red','Kinetic theory of gases':'red','Boltzmann constant':'red','Specific heat capacity':'red','Specific latent heat':'red',
+ 'Gravitational fields (uniform & radial)':'amber','Gravitational potential':'amber',"Orbits & Kepler's law":'red','Electric fields (uniform & radial)':'amber','Electric potential':'red','Capacitors (charge, energy, time constant)':'red','Capacitor charging & discharging':'red','Magnetic fields (force on wire & charge)':'amber',"Electromagnetic induction & Faraday's law":'red',"Lenz's law":'red','Transformers':'red','Alternating current (RMS, peak)':'red',
+ 'Radioactive decay (alpha, beta, gamma)':'amber','Activity & half-life':'amber','Radioactive decay equations':'red','Nuclear radius':'red','Nuclear binding energy':'red','Fission & fusion':'red','Background radiation':'red',
+ 'Telescopes (refracting, reflecting, radio)':'red','Imaging & detecting radiation':'red','Distances in space (parsec, light year, AU)':'amber','Stellar luminosity & flux':'red','Hertzsprung-Russell diagram':'red','Stellar evolution (main sequence, giants, white dwarfs, neutron stars)':'red','Supernovae & black holes':'red','Doppler effect & redshift':'amber',"Hubble's law & the expanding universe":'red','Cosmic microwave background radiation':'red','Dark matter & dark energy':'red',
+ },
+ maths: {
+ 'Algebraic expressions & manipulation':'green','Quadratics':'green','Equations & inequalities':'amber','Graphs & transformations':'amber','Straight-line graphs':'amber','Circles':'amber','Algebraic methods (proof, factor theorem)':'amber','Partial fractions':'red','Functions & mappings':'amber','Composite & inverse functions':'red','Modulus function':'red',
+ 'Circles (equations, chords, tangents)':'red',
+ 'Arithmetic sequences & series':'amber','Geometric sequences & series':'amber','Sigma notation':'red','Binomial expansion (positive integer)':'amber','Binomial expansion (any rational n)':'red',
+ 'Trigonometric ratios & graphs':'amber','Trig identities (sin²+cos²=1 etc.)':'amber','Solving trig equations':'amber','Radians, arc length, sector area':'red','Small angle approximations':'green','Reciprocal trig functions':'amber','Inverse trig functions':'red','Addition formulae':'red','Double angle formulae':'amber','R cos/sin(θ ± α) form':'red',
+ 'Exponential functions & graphs':'amber','Logarithms & laws':'amber','Natural log (ln) & e':'amber','Solving exponential equations':'red','Modelling with exponentials':'red',
+ 'Differentiation from first principles':'red','Differentiating polynomials':'amber','Chain rule':'red','Product rule':'amber','Quotient rule':'amber','Differentiating trig functions':'amber','Differentiating exponentials & logs':'amber','Implicit differentiation':'red','Parametric differentiation':'red','Second derivatives & stationary points':'amber','Rates of change':'amber',
+ 'Indefinite integration':'green','Definite integration':'green','Area under a curve':'green','Trapezium rule':'red','Integration by substitution':'red','Integration by parts':'red','Integrating trig & exponentials':'amber','Integrating partial fractions':'red','Differential equations (separable)':'red',
+ '2D vectors':'green','3D vectors':'amber','Magnitude & direction':'amber','Position vectors':'amber','Scalar (dot) product':'amber',
+ 'Locating roots (sign change)':'amber','Newton-Raphson method':'red','Fixed-point iteration':'amber','Iteration convergence':'red',
+ 'Proof by deduction':'amber','Proof by exhaustion':'amber','Disproof by counter-example':'amber','Proof by contradiction':'red',
+ 'Statistical sampling':'amber','Data representation (histograms, box plots, cumulative frequency)':'amber','Measures of location & spread':'red','Coding data':'red','Correlation & regression':'red','Probability basics':'green','Conditional probability':'green','Discrete probability distributions':'red','Binomial distribution':'red','Normal distribution':'red','Hypothesis testing (binomial)':'red','Hypothesis testing (normal)':'red',
+ 'Kinematics (constant acceleration, SUVAT)':'green','Kinematics (variable acceleration, calculus)':'green',"Forces & Newton's laws":'amber','Connected particles':'amber','Moments':'red','Vectors in mechanics':'amber','Projectile motion':'amber',
+ },
+ biology: {
+ 'Cell structure (prokaryotic & eukaryotic)':'green','Microscopy & magnification':'amber','Cell fractionation & ultracentrifugation':'amber','Biological molecules — carbohydrates':'red','Biological molecules — lipids':'red','Biological molecules — proteins & amino acids':'red','Enzyme action (lock & key, induced fit)':'amber','Enzyme inhibition (competitive & non-competitive)':'amber','Factors affecting enzyme activity':'amber','Water & its properties':'amber','DNA & RNA structure':'red','ATP structure & hydrolysis':'red','Cell membranes (fluid mosaic model)':'red','Membrane transport (diffusion, osmosis, active transport)':'red','Mitosis & cell cycle':'red','Meiosis':'red',
+ 'Surface area to volume ratio':'green','Gas exchange (insects, fish, mammals)':'amber','Alveoli structure & function':'red','Ventilation in mammals':'amber','Haemoglobin & oxygen dissociation curve':'red','Bohr effect':'red','Blood vessels (arteries, veins, capillaries)':'amber','Heart structure & cardiac cycle':'red','Pressure changes in the heart':'red','Xylem structure & transpiration':'red','Factors affecting transpiration':'amber','Translocation & phloem':'red',
+ 'Pathogens & disease (bacteria, viruses, fungi)':'amber','Non-specific immune response':'red','Specific immune response (B & T lymphocytes)':'red','Antibodies & antigens':'red','Vaccination':'amber','HIV & immune system':'red','Biodiversity (species richness, Simpson\'s index)':'red','Sampling techniques':'amber','Classification & taxonomy':'red',"Darwin's natural selection":'amber','Speciation (allopatric & sympatric)':'red','Genetic drift':'red',
+ 'Homeostasis principles':'amber','Thermoregulation':'amber','Blood glucose regulation (insulin & glucagon)':'red','Diabetes (Type 1 & 2)':'amber','Kidney structure & ultrafiltration':'red','Selective reabsorption':'red','Osmoregulation & ADH':'red','Resting potential':'amber','Action potential & propagation':'amber','Synaptic transmission':'amber','Neuromuscular junction':'red','Muscle structure (sarcomere, sliding filament)':'red','Photosynthesis — light dependent reactions':'red','Photosynthesis — Calvin cycle':'red','Limiting factors in photosynthesis':'red','Respiration — glycolysis':'red','Krebs cycle':'red','Oxidative phosphorylation':'red','Anaerobic respiration':'red',
+ 'DNA replication':'red','Transcription & translation':'red','Gene mutations':'red','Genetic code (codons, degeneracy)':'red','Epigenetics':'red','Monohybrid inheritance':'red','Dihybrid inheritance':'red','Codominance & multiple alleles':'red','Sex linkage':'red','Hardy-Weinberg principle':'red','Ecosystems — trophic levels & food webs':'red','Energy flow & efficiency':'red','Nitrogen cycle':'red','Carbon cycle':'red','Succession':'red','Conservation methods':'amber','DNA technology (PCR, gel electrophoresis)':'red','Genetic engineering & recombinant DNA':'red','GMOs':'red','Stem cells':'red','Cloning':'amber',
+ }
+};
+
+// Load from localStorage or use initial
+function loadRatings() {
+ try {
+ const saved = localStorage.getItem('alevel_ratings');
+ if (saved) return JSON.parse(saved);
+ } catch(e) {}
+ return JSON.parse(JSON.stringify(INITIAL_RATINGS));
+}
+
+function saveRatings() {
+ try { localStorage.setItem('alevel_ratings', JSON.stringify(ratings)); } catch(e) {}
+}
+
+let ratings = loadRatings();
+
+// TIMETABLE DATA 
+const EXAMS = [
+ { date:'2026-05-20', label:'Physics P1', subj:'physics' },
+ { date:'2026-06-01', label:'Physics P2', subj:'physics' },
+ { date:'2026-06-03', label:'Maths P1', subj:'maths' },
+ { date:'2026-06-04', label:'Bio P1', subj:'biology' },
+ { date:'2026-06-08', label:'Physics P3', subj:'physics' },
+ { date:'2026-06-11', label:'Maths P2', subj:'maths' },
+ { date:'2026-06-12', label:'Bio P2', subj:'biology' },
+ { date:'2026-06-16', label:'Bio P3', subj:'biology' },
+ { date:'2026-06-18', label:'Maths P3', subj:'maths' },
+];
+
+// School lessons by day-of-week (1=Mon ... 5=Fri)
+const SCHOOL_LESSONS = {
+ 1: [{ time:'09:00', end:'10:00', label:'Maths', cls:'mat' },{ time:'10:00', end:'11:00', label:'Maths Support', cls:'mat' },{ time:'14:00', end:'15:00', label:'Physics', cls:'phy' }],
+ 2: [{ time:'14:00', end:'15:00', label:'Biology', cls:'bio' },{ time:'15:00', end:'16:00', label:'Maths', cls:'mat' }],
+ 3: [{ time:'09:00', end:'11:00', label:'Biology', cls:'bio' },{ time:'14:00', end:'16:00', label:'Physics', cls:'phy' }],
+ 4: [{ time:'10:00', end:'12:00', label:'Maths', cls:'mat' },{ time:'13:00', end:'14:00', label:'Physics', cls:'phy' }],
+ 5: [{ time:'09:00', end:'10:00', label:'Future Ready', cls:'other' },{ time:'10:00', end:'12:00', label:'Biology', cls:'bio' },{ time:'13:00', end:'14:00', label:'Biology Booster', cls:'bio' }],
+};
+
+// Free periods available for revision per day (slots that fit within free periods)
+// Returns array of {time, location}
+function getFreePeriods(dow) {
+ // Tue: free periods 09:00–14:00 (3 slots, shifted 1hr later than before)
+ if (dow === 2) return [{time:'10:00',loc:'Free (school)'},{time:'11:00',loc:'Free (school)'},{time:'12:00',loc:'Free (school)'}];
+ // Wed: 2 free period slots + 1 early afternoon
+ if (dow === 3) return [{time:'11:00',loc:'Free (school)'},{time:'12:00',loc:'Free (school)'}];
+ // Thu: free period at 09:00 moved to 15:30 (after lessons end)
+ // (handled via evening times override below)
+ return [];
+}
+
+// Topic pools per subject — cycle through red first, then amber, then green
+
+// ── TOPIC TO PAPER MAPPING ────────────────────────────────────────────────────
+// Each topic maps to the exam date it is assessed on.
+// Topics are only added to the queue before their exam date,
+// and removed after their exam date has passed.
+
+const EXAM_DATES = {
+  physics_p1: '2026-05-20',
+  physics_p2: '2026-06-01',
+  physics_p3: '2026-06-08',
+  maths_p1:   '2026-06-03',
+  maths_p2:   '2026-06-11',
+  maths_p3:   '2026-06-18',
+  bio_p1:     '2026-06-04',
+  bio_p2:     '2026-06-12',
+  bio_p3:     '2026-06-16',
+};
+
+const TOPIC_PAPER = {
+  // ── PHYSICS ──────────────────────────────────────────────────────────────────
+  // Paper 1: Measurements, Particles, Waves, Mechanics, Electricity
+  'SI units & prefixes':                                   'physics_p1',
+  'Random & systematic errors':                            'physics_p1',
+  'Accuracy & precision':                                  'physics_p1',
+  'Uncertainty (absolute, fractional, %)':                 'physics_p1',
+  'Combining uncertainties':                               'physics_p1',
+  'Graphs & gradients':                                    'physics_p1',
+  'Atomic structure':                                      'physics_p1',
+  'Stable & unstable nuclei':                              'physics_p1',
+  'Particles & antiparticles':                             'physics_p1',
+  'Particle interactions (photons, leptons, quarks)':      'physics_p1',
+  'Conservation laws (charge, baryon, lepton)':            'physics_p1',
+  'Quarks & hadrons':                                      'physics_p1',
+  'Strange particles':                                     'physics_p1',
+  'Feynman diagrams':                                      'physics_p1',
+  'Photoelectric effect':                                  'physics_p1',
+  'Energy levels & photon emission':                       'physics_p1',
+  'Wave-particle duality':                                 'physics_p1',
+  'Progressive waves (amplitude, frequency, wavelength)':  'physics_p1',
+  'Transverse & longitudinal waves':                       'physics_p1',
+  'Superposition':                                         'physics_p1',
+  'Stationary waves':                                      'physics_p1',
+  'Diffraction':                                           'physics_p1',
+  'Two-source interference':                               'physics_p1',
+  "Young's double slit":                                   'physics_p1',
+  'Diffraction grating':                                   'physics_p1',
+  "Refraction & Snell's law":                              'physics_p1',
+  'Total internal reflection':                             'physics_p1',
+  'Polarisation':                                          'physics_p1',
+  'Scalars & vectors':                                     'physics_p1',
+  'Moments':                                               'physics_p1',
+  'Motion along a line (SUVAT)':                           'physics_p1',
+  'Projectile motion':                                     'physics_p1',
+  "Newton's laws":                                         'physics_p1',
+  'Momentum & impulse':                                    'physics_p1',
+  'Work, energy & power':                                  'physics_p1',
+  'Conservation of energy':                                'physics_p1',
+  "Bulk properties of solids (stress, strain, Young's modulus)": 'physics_p1',
+  "Force-extension graphs & Hooke's law":                  'physics_p1',
+  'Charge, current & potential difference':                'physics_p1',
+  "Resistance & Ohm's law":                                'physics_p1',
+  'I-V characteristics':                                   'physics_p1',
+  'Resistivity':                                           'physics_p1',
+  'Power & energy':                                        'physics_p1',
+  'Series & parallel circuits':                            'physics_p1',
+  'EMF & internal resistance':                             'physics_p1',
+  'Potential dividers':                                    'physics_p1',
+  "Kirchhoff's laws":                                      'physics_p1',
+  // Paper 2: Further Mechanics, Thermal, Fields
+  'Circular motion (angular velocity, centripetal acceleration)': 'physics_p2',
+  'Simple harmonic motion (SHM) — defining equation':      'physics_p2',
+  'SHM energy':                                            'physics_p2',
+  'Forced oscillations & resonance':                       'physics_p2',
+  'Damping':                                               'physics_p2',
+  'Thermal energy transfer':                               'physics_p2',
+  'Internal energy':                                       'physics_p2',
+  'Ideal gas law (pV=nRT)':                                'physics_p2',
+  'Kinetic theory of gases':                               'physics_p2',
+  'Boltzmann constant':                                    'physics_p2',
+  'Specific heat capacity':                                'physics_p2',
+  'Specific latent heat':                                  'physics_p2',
+  'Gravitational fields (uniform & radial)':               'physics_p2',
+  'Gravitational potential':                               'physics_p2',
+  "Orbits & Kepler's law":                                 'physics_p2',
+  'Electric fields (uniform & radial)':                    'physics_p2',
+  'Electric potential':                                    'physics_p2',
+  'Capacitors (charge, energy, time constant)':            'physics_p2',
+  'Capacitor charging & discharging':                      'physics_p2',
+  'Magnetic fields (force on wire & charge)':              'physics_p2',
+  "Electromagnetic induction & Faraday's law":             'physics_p2',
+  "Lenz's law":                                            'physics_p2',
+  'Transformers':                                          'physics_p2',
+  'Alternating current (RMS, peak)':                       'physics_p2',
+  // Paper 3: Nuclear, Astrophysics (option)
+  'Radioactive decay (alpha, beta, gamma)':                'physics_p3',
+  'Activity & half-life':                                  'physics_p3',
+  'Radioactive decay equations':                           'physics_p3',
+  'Nuclear radius':                                        'physics_p3',
+  'Nuclear binding energy':                                'physics_p3',
+  'Fission & fusion':                                      'physics_p3',
+  'Background radiation':                                  'physics_p3',
+  'Telescopes (refracting, reflecting, radio)':            'physics_p3',
+  'Imaging & detecting radiation':                         'physics_p3',
+  'Distances in space (parsec, light year, AU)':           'physics_p3',
+  'Stellar luminosity & flux':                             'physics_p3',
+  'Hertzsprung-Russell diagram':                           'physics_p3',
+  'Stellar evolution (main sequence, giants, white dwarfs, neutron stars)': 'physics_p3',
+  'Supernovae & black holes':                              'physics_p3',
+  'Doppler effect & redshift':                             'physics_p3',
+  "Hubble's law & the expanding universe":                 'physics_p3',
+  'Cosmic microwave background radiation':                 'physics_p3',
+  'Dark matter & dark energy':                             'physics_p3',
+
+  // ── MATHS ────────────────────────────────────────────────────────────────────
+  // Paper 1: Pure no calculator — algebra, trig, differentiation, integration, vectors, proof
+  'Algebraic expressions & manipulation':  'maths_p1',
+  'Quadratics':                            'maths_p1',
+  'Equations & inequalities':              'maths_p1',
+  'Graphs & transformations':              'maths_p1',
+  'Straight-line graphs':                  'maths_p1',
+  'Circles':                               'maths_p1',
+  'Algebraic methods (proof, factor theorem)': 'maths_p1',
+  'Partial fractions':                     'maths_p1',
+  'Functions & mappings':                  'maths_p1',
+  'Composite & inverse functions':         'maths_p1',
+  'Modulus function':                      'maths_p1',
+  'Circles (equations, chords, tangents)': 'maths_p1',
+  'Trigonometric ratios & graphs':         'maths_p1',
+  "Trig identities (sin²+cos²=1 etc.)":    'maths_p1',
+  'Solving trig equations':                'maths_p1',
+  'Radians, arc length, sector area':      'maths_p1',
+  'Small angle approximations':            'maths_p1',
+  'Reciprocal trig functions':             'maths_p1',
+  'Inverse trig functions':                'maths_p1',
+  'Addition formulae':                     'maths_p1',
+  'Double angle formulae':                 'maths_p1',
+  'R cos/sin(θ ± α) form':                 'maths_p1',
+  'Differentiation from first principles': 'maths_p1',
+  'Differentiating polynomials':           'maths_p1',
+  'Chain rule':                            'maths_p1',
+  'Product rule':                          'maths_p1',
+  'Quotient rule':                         'maths_p1',
+  'Differentiating trig functions':        'maths_p1',
+  'Differentiating exponentials & logs':   'maths_p1',
+  'Implicit differentiation':              'maths_p1',
+  'Parametric differentiation':            'maths_p1',
+  'Second derivatives & stationary points': 'maths_p1',
+  'Rates of change':                       'maths_p1',
+  'Indefinite integration':                'maths_p1',
+  'Definite integration':                  'maths_p1',
+  'Area under a curve':                    'maths_p1',
+  'Integration by substitution':           'maths_p1',
+  'Integration by parts':                  'maths_p1',
+  'Integrating trig & exponentials':       'maths_p1',
+  'Integrating partial fractions':         'maths_p1',
+  'Differential equations (separable)':    'maths_p1',
+  '2D vectors':                            'maths_p1',
+  '3D vectors':                            'maths_p1',
+  'Magnitude & direction':                 'maths_p1',
+  'Position vectors':                      'maths_p1',
+  'Scalar (dot) product':                  'maths_p1',
+  'Proof by deduction':                    'maths_p1',
+  'Proof by exhaustion':                   'maths_p1',
+  'Disproof by counter-example':           'maths_p1',
+  'Proof by contradiction':                'maths_p1',
+  // Paper 2: Pure with calculator — logs, numerical methods, sequences, trapezium rule
+  'Exponential functions & graphs':        'maths_p2',
+  'Logarithms & laws':                     'maths_p2',
+  'Natural log (ln) & e':                  'maths_p2',
+  'Solving exponential equations':         'maths_p2',
+  'Modelling with exponentials':           'maths_p2',
+  'Arithmetic sequences & series':         'maths_p2',
+  'Geometric sequences & series':          'maths_p2',
+  'Sigma notation':                        'maths_p2',
+  'Binomial expansion (positive integer)': 'maths_p2',
+  'Binomial expansion (any rational n)':   'maths_p2',
+  'Trapezium rule':                        'maths_p2',
+  'Locating roots (sign change)':          'maths_p2',
+  'Newton-Raphson method':                 'maths_p2',
+  'Fixed-point iteration':                 'maths_p2',
+  'Iteration convergence':                 'maths_p2',
+  // Paper 3: Statistics & Mechanics
+  'Statistical sampling':                  'maths_p3',
+  'Data representation (histograms, box plots, cumulative frequency)': 'maths_p3',
+  'Measures of location & spread':         'maths_p3',
+  'Coding data':                           'maths_p3',
+  'Correlation & regression':              'maths_p3',
+  'Probability basics':                    'maths_p3',
+  'Conditional probability':               'maths_p3',
+  'Discrete probability distributions':    'maths_p3',
+  'Binomial distribution':                 'maths_p3',
+  'Normal distribution':                   'maths_p3',
+  'Hypothesis testing (binomial)':         'maths_p3',
+  'Hypothesis testing (normal)':           'maths_p3',
+  'Kinematics (constant acceleration, SUVAT)': 'maths_p3',
+  'Kinematics (variable acceleration, calculus)': 'maths_p3',
+  "Forces & Newton's laws":                'maths_p3',
+  'Connected particles':                   'maths_p3',
+  'Moments':                               'maths_p3',
+  'Vectors in mechanics':                  'maths_p3',
+  'Projectile motion':                     'maths_p3',
+
+  // ── BIOLOGY ──────────────────────────────────────────────────────────────────
+  // Paper 1: Module 2 + Module 3
+  'Cell structure (prokaryotic & eukaryotic)':             'bio_p1',
+  'Microscopy & magnification':                            'bio_p1',
+  'Cell fractionation & ultracentrifugation':              'bio_p1',
+  'Biological molecules — carbohydrates':                  'bio_p1',
+  'Biological molecules — lipids':                         'bio_p1',
+  'Biological molecules — proteins & amino acids':         'bio_p1',
+  'Enzyme action (lock & key, induced fit)':               'bio_p1',
+  'Enzyme inhibition (competitive & non-competitive)':     'bio_p1',
+  'Factors affecting enzyme activity':                     'bio_p1',
+  'Water & its properties':                                'bio_p1',
+  'DNA & RNA structure':                                   'bio_p1',
+  'ATP structure & hydrolysis':                            'bio_p1',
+  'Cell membranes (fluid mosaic model)':                   'bio_p1',
+  'Membrane transport (diffusion, osmosis, active transport)': 'bio_p1',
+  'Mitosis & cell cycle':                                  'bio_p1',
+  'Meiosis':                                               'bio_p1',
+  'Surface area to volume ratio':                          'bio_p1',
+  'Gas exchange (insects, fish, mammals)':                 'bio_p1',
+  'Alveoli structure & function':                          'bio_p1',
+  'Ventilation in mammals':                                'bio_p1',
+  'Haemoglobin & oxygen dissociation curve':               'bio_p1',
+  'Bohr effect':                                           'bio_p1',
+  'Blood vessels (arteries, veins, capillaries)':          'bio_p1',
+  'Heart structure & cardiac cycle':                       'bio_p1',
+  'Pressure changes in the heart':                         'bio_p1',
+  'Xylem structure & transpiration':                       'bio_p1',
+  'Factors affecting transpiration':                       'bio_p1',
+  'Translocation & phloem':                                'bio_p1',
+  // Paper 2: Module 4 + Module 5
+  'Pathogens & disease (bacteria, viruses, fungi)':        'bio_p2',
+  'Non-specific immune response':                          'bio_p2',
+  'Specific immune response (B & T lymphocytes)':          'bio_p2',
+  'Antibodies & antigens':                                 'bio_p2',
+  'Vaccination':                                           'bio_p2',
+  'HIV & immune system':                                   'bio_p2',
+  "Biodiversity (species richness, Simpson's index)":      'bio_p2',
+  'Sampling techniques':                                   'bio_p2',
+  'Classification & taxonomy':                             'bio_p2',
+  "Darwin's natural selection":                            'bio_p2',
+  'Speciation (allopatric & sympatric)':                   'bio_p2',
+  'Genetic drift':                                         'bio_p2',
+  'Homeostasis principles':                                'bio_p2',
+  'Thermoregulation':                                      'bio_p2',
+  'Blood glucose regulation (insulin & glucagon)':         'bio_p2',
+  'Diabetes (Type 1 & 2)':                                 'bio_p2',
+  'Kidney structure & ultrafiltration':                    'bio_p2',
+  'Selective reabsorption':                                'bio_p2',
+  'Osmoregulation & ADH':                                  'bio_p2',
+  'Resting potential':                                     'bio_p2',
+  'Action potential & propagation':                        'bio_p2',
+  'Synaptic transmission':                                 'bio_p2',
+  'Neuromuscular junction':                                'bio_p2',
+  'Muscle structure (sarcomere, sliding filament)':        'bio_p2',
+  'Photosynthesis — light dependent reactions':            'bio_p2',
+  'Photosynthesis — Calvin cycle':                         'bio_p2',
+  'Limiting factors in photosynthesis':                    'bio_p2',
+  'Respiration — glycolysis':                              'bio_p2',
+  'Krebs cycle':                                           'bio_p2',
+  'Oxidative phosphorylation':                             'bio_p2',
+  'Anaerobic respiration':                                 'bio_p2',
+  // Paper 3: Module 6 + synoptic
+  'DNA replication':                                       'bio_p3',
+  'Transcription & translation':                           'bio_p3',
+  'Gene mutations':                                        'bio_p3',
+  'Genetic code (codons, degeneracy)':                     'bio_p3',
+  'Epigenetics':                                           'bio_p3',
+  'Monohybrid inheritance':                                'bio_p3',
+  'Dihybrid inheritance':                                  'bio_p3',
+  'Codominance & multiple alleles':                        'bio_p3',
+  'Sex linkage':                                           'bio_p3',
+  'Hardy-Weinberg principle':                              'bio_p3',
+  'Ecosystems — trophic levels & food webs':               'bio_p3',
+  'Energy flow & efficiency':                              'bio_p3',
+  'Nitrogen cycle':                                        'bio_p3',
+  'Carbon cycle':                                          'bio_p3',
+  'Succession':                                            'bio_p3',
+  'Conservation methods':                                  'bio_p3',
+  'DNA technology (PCR, gel electrophoresis)':             'bio_p3',
+  'Genetic engineering & recombinant DNA':                 'bio_p3',
+  'GMOs':                                                  'bio_p3',
+  'Stem cells':                                            'bio_p3',
+  'Cloning':                                               'bio_p3',
+};
+
+// Final paper 3 dates per subject — after this, subject is done entirely
+const SUBJECT_FINAL_EXAM = {
+  physics: '2026-06-08',
+  maths:   '2026-06-18',
+  biology: '2026-06-16',
+};
+
+// Given the current date string, return which topics are still eligible
+function getEligibleTopics(subj, currentDs) {
+  // If subject's final exam has passed, no topics needed
+  if (SUBJECT_FINAL_EXAM[subj] && currentDs >= SUBJECT_FINAL_EXAM[subj]) {
+    return [];
+  }
+  const eligible = [];
+  for (const sec of SUBJECTS[subj].sections) {
+    for (const topic of sec.topics) {
+      const paperKey = TOPIC_PAPER[topic];
+      if (!paperKey) {
+        eligible.push(topic);
+        continue;
+      }
+      const examDate = EXAM_DATES[paperKey];
+      if (!examDate || currentDs < examDate) {
+        eligible.push(topic);
+      }
+    }
+  }
+  return eligible;
+}
+
+// ── SCHEDULE ENGINE ──────────────────────────────────────────────────────────
+// Pre-computes the full 13-week timetable once, stores it in localStorage.
+// Both the calendar and the day overlay read from this stored schedule.
+// No replay, no drift, no calendar/overlay mismatch.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SCHEDULE_KEY = 'alevel_schedule_v8';
+
+// Slot templates per day-of-week during school term (before 8 May)
+const TERM_SLOTS = {
+  0: { times:['10:00','11:00','13:00','14:30','16:00'], locs:['Home','Home','Home','Home','Home'] },
+  1: { times:['12:30','13:30','16:00','17:00'],         locs:['Home (lunch)','Home (lunch)','Evening (home)','Evening (home)'] },
+  2: { times:['11:00','12:00','17:00','18:00'],         locs:['Free (school)','Free (school)','Evening (home)','Evening (home)'] },
+  3: { times:['11:00','12:00','13:00','17:00'], locs:['Free (school)','Free (school)','Free (school)','Evening (home)'] },
+  4: { times:['15:30','16:30','17:30'],                 locs:['After school','Evening (home)','Evening (home)'] },
+  5: { times:['15:00','16:00'],                         locs:['After school','After school'] },
+  6: null, // Saturday = rest
+};
+
+// Build the ordered framework of every slot (date, slotIndex, subject, time, loc)
+// Subjects rotate strictly Physics→Maths→Biology across all slots in date order.
+function buildSlotFramework() {
+  const slots = [];
+  const start = new Date('2026-03-23');
+  const SUBJ  = ['physics','maths','biology'];
+  let counter = 0;
+  for (let w = 0; w < 13; w++) {
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(start, w * 7 + d);
+      const ds  = dateStr(day);
+      const dow = day.getDay();
+      if (dow === 6) continue;
+      if (ds > '2026-06-18') continue;
+      const onSL = ds >= '2026-05-08';
+      const times = onSL ? ['','','','','',''] : (TERM_SLOTS[dow] ? TERM_SLOTS[dow].times : null);
+      const locs  = onSL ? Array(6).fill('Study leave') : (TERM_SLOTS[dow] ? TERM_SLOTS[dow].locs : null);
+      if (!times) continue;
+      for (let i = 0; i < times.length; i++) {
+        slots.push({ date: ds, slotIndex: i, subject: SUBJ[counter % 3], time: times[i], loc: locs[i] });
+        counter++;
+      }
+    }
+  }
+  return slots;
+}
+
+// Build topic priority queue for one subject.
+// Sort by: exam paper date first (earlier papers scheduled first),
+// then by rating within each paper (reds → ambers → greens).
+// This guarantees every topic is scheduled before its exam, regardless of rating.
+function buildTopicQueue(subj, eligible) {
+  const ratingOrder = { red: 0, amber: 1, green: 2 };
+  // Group topics by their exam paper date
+  const byPaper = {};
+  for (const t of eligible) {
+    const paperKey = TOPIC_PAPER[t];
+    const examDate = paperKey ? (EXAM_DATES[paperKey] || '9999-99-99') : '9999-99-99';
+    if (!byPaper[examDate]) byPaper[examDate] = { reds: [], ambers: [], greens: [] };
+    const r = (ratings[subj] && ratings[subj][t]) || 'red';
+    if (r === 'red')        byPaper[examDate].reds.push(t);
+    else if (r === 'amber') byPaper[examDate].ambers.push(t);
+    else                    byPaper[examDate].greens.push(t);
+  }
+  // Build queue: earliest paper first, within each paper: reds → ambers → greens
+  const sortedDates = Object.keys(byPaper).sort();
+  const queue = [];
+  for (const d of sortedDates) {
+    queue.push(...byPaper[d].reds, ...byPaper[d].ambers, ...byPaper[d].greens);
+  }
+  return queue;
+}
+
+// Generate the full schedule and save it to localStorage.
+function generateSchedule() {
+  const framework = buildSlotFramework();
+
+  const subjectSlots = { physics: [], maths: [], biology: [] };
+  for (const frame of framework) subjectSlots[frame.subject].push(frame);
+
+  const ppLabels   = { physics:'Past paper — Physics', maths:'Past paper — Maths', biology:'Past paper — Biology' };
+  const examDates  = new Set(EXAMS.map(e => e.date));
+
+  // UTC-based week index — avoids timezone drift
+  function weekOf(ds) {
+    const p = ds.split('-');
+    return Math.floor((Date.UTC(+p[0], +p[1]-1, +p[2]) - Date.UTC(2026, 2, 23)) / (7*86400000));
+  }
+
+  // Pre-compute PP target dates:
+  //   • No PP before 11 May
+  //   • From 11 May: one PP per subject per week
+  //   • Spread so no two subjects share a day within the same week
+  //   • Never on exam days, never after a subject's final exam
+  const byWeekSubj = {};
+  for (const f of framework) {
+    if (f.date < '2026-05-11') continue;
+    const key = weekOf(f.date) + ':' + f.subject;
+    if (!byWeekSubj[key]) byWeekSubj[key] = [];
+    byWeekSubj[key].push(f);
+  }
+  const ppTargetDate = {}; // 'w:subj' → target date string
+  const weeks = [...new Set(Object.keys(byWeekSubj).map(k => parseInt(k)))].sort((a,b) => a-b);
+  for (const w of weeks) {
+    const usedDates = new Set();
+    for (const subj of ['physics','maths','biology']) {
+      for (const f of (byWeekSubj[w+':'+subj] || [])) {
+        if (examDates.has(f.date)) continue;
+        if (SUBJECT_FINAL_EXAM[subj] && f.date >= SUBJECT_FINAL_EXAM[subj]) continue;
+        if (!usedDates.has(f.date)) {
+          ppTargetDate[w+':'+subj] = f.date;
+          usedDates.add(f.date);
+          break;
+        }
+      }
+    }
+  }
+
+  const schedule = [];
+
+  for (const subj of ['physics','maths','biology']) {
+    const slots = subjectSlots[subj];
+    const queue = buildTopicQueue(subj, getEligibleTopics(subj, '2026-03-23'));
+    if (!queue.length) continue;
+
+    const ppConsumed = new Set(); // 'w:subj' keys already used
+    let topicPtr = 0;
+
+    for (const frame of slots) {
+      const w    = weekOf(frame.date);
+      const wKey = w + ':' + subj;
+
+      // Skip slots after the subject's final exam — nothing left to revise
+      if (SUBJECT_FINAL_EXAM[subj] && frame.date >= SUBJECT_FINAL_EXAM[subj]) continue;
+
+      // Exam day cap: at most 2 total slots on any exam day
+      if (examDates.has(frame.date) && frame.slotIndex >= 2) continue;
+
+      // PP slot: fires once per week per subject on the pre-computed target date
+      if (ppTargetDate[wKey] === frame.date && !ppConsumed.has(wKey)) {
+        ppConsumed.add(wKey);
+        schedule.push({ ...frame, topic: ppLabels[subj], rating: 'green', isPastPaper: true });
+        continue;
+      }
+
+      // Normal topic slot
+      let assigned = false;
+      const startPtr = topicPtr;
+      for (let offset = 0; offset < queue.length; offset++) {
+        const candidate = queue[(startPtr + offset) % queue.length];
+        const paperKey  = TOPIC_PAPER[candidate];
+        const examDate  = paperKey ? EXAM_DATES[paperKey] : null;
+        if (!examDate || frame.date < examDate) {
+          topicPtr = startPtr + offset + 1;
+          schedule.push({ ...frame, topic: candidate, rating: (ratings[subj] && ratings[subj][candidate]) || 'red', isPastPaper: false });
+          assigned = true;
+          break;
+        }
+      }
+      if (!assigned) {
+        schedule.push({ ...frame, topic: ppLabels[subj], rating: 'green', isPastPaper: true });
+      }
+    }
+  }
+
+  // Sort into date order
+  schedule.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.slotIndex - b.slotIndex);
+
+  try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule)); } catch(e) {}
+  return schedule;
+}
+
+let _schedule = null;
+function getSchedule() {
+  if (_schedule) return _schedule;
+  try { const s = localStorage.getItem(SCHEDULE_KEY); if (s) { _schedule = JSON.parse(s); return _schedule; } } catch(e) {}
+  _schedule = generateSchedule();
+  return _schedule;
+}
+function saveSchedule() { try { localStorage.setItem(SCHEDULE_KEY, JSON.stringify(_schedule)); } catch(e) {} }
+
+// Return all slots for a date, or null if none
+function getSlotsForDate(ds) {
+  const slots = getSchedule().filter(s => s.date === ds);
+  return slots.length ? slots : null;
+}
+
+// When a slot is marked missed, mark it as missed in the schedule and insert
+// the topic as an extra slot on the next available day that doesn't already
+// have a carried-over slot. Multiple missed topics spread one per day.
+function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
+  const sched = getSchedule();
+
+  // Mark the current slot as missed
+  const cur = sched.find(s => s.date === ds && s.slotIndex === slotIndex && s.subject === subj);
+  if (cur) { cur.topic = 'Missed — rescheduled'; cur.rating = 'red'; cur.missed = true; cur.isPastPaper = false; }
+
+  // Find the next calendar day after ds that is not Saturday and not past the
+  // final exam, and that doesn't already have a carried-over slot for any subject.
+  const carriedDates = new Set(sched.filter(s => s.carriedOver).map(s => s.date));
+  const startDate = new Date(ds + 'T00:00:00');
+  let insertDate = null;
+  for (let i = 1; i <= 30; i++) {
+    const candidate = new Date(startDate);
+    candidate.setDate(candidate.getDate() + i);
+    const candidateDs = dateStr(candidate);
+    if (candidate.getDay() === 6) continue;           // skip Saturday
+    if (candidateDs > '2026-06-18') break;            // past end of timetable
+    if (SUBJECT_FINAL_EXAM[subj] && candidateDs >= SUBJECT_FINAL_EXAM[subj]) break; // past subject's final exam
+    if (!carriedDates.has(candidateDs)) {
+      insertDate = candidateDs;
+      break;
+    }
+  }
+
+  if (insertDate) {
+    // Insert an extra slot at the end of that day's slots for this subject.
+    // Use a high slotIndex (100+) so it sorts after regular slots but is
+    // clearly identifiable as a carry-over.
+    const existingOnDay = sched.filter(s => s.date === insertDate);
+    const maxSlotIdx = existingOnDay.length ? Math.max(...existingOnDay.map(s => s.slotIndex)) : -1;
+    sched.push({
+      date:        insertDate,
+      slotIndex:   maxSlotIdx + 1,
+      subject:     subj,
+      time:        '',
+      loc:         'Catch-up',
+      topic:       topic,
+      rating:      (ratings[subj] && ratings[subj][topic]) || 'red',
+      isPastPaper: false,
+      carriedOver: true,
+    });
+    // Re-sort so the schedule stays in date order
+    sched.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.slotIndex - b.slotIndex);
+  }
+
+  _schedule = sched;
+  saveSchedule();
+}
+
+// Rebuild schedule when ratings change
+function resetAndRegenerateSchedule() {
+  _schedule = null;
+  try { localStorage.removeItem(SCHEDULE_KEY); } catch(e) {}
+  _schedule = generateSchedule();
+}
+
+// getDayData: reads from pre-computed schedule (replaces buildDaySlots)
+function getDayData(ds) {
+  const parts = ds.split('-');
+  const date  = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  if (date.getDay() === 6) return { type: 'rest' };
+  if (ds > '2026-06-18')   return { type: 'rest' };
+  const examsToday = EXAMS.filter(e => e.date === ds);
+  const slots      = getSlotsForDate(ds);
+  if (!slots) return { type: 'rest' };
+  return { type: examsToday.length ? 'exam' : 'normal', exams: examsToday, slots };
+}
+
+// Seeded random (kept for compatibility; no longer drives topic assignment)
+let seed = 12345;
+function seededRand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+
+function dateStr(d) { const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const dy=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dy; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmt(d) { return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+function fmtFull(d) { return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+
+// Week focus descriptions
+const WEEK_FOCUSES = [
+ "Foundation sweep. Every subject, every slot — build the habit.",
+ "Consolidation week. Revisit weak spots identified in week 1.",
+ "Depth week. Slow down on red topics; attempt practice questions.",
+ "Past paper introduction. One PP per subject alongside topic revision.",
+ "Physics: Waves & Fields focus. Maths: Pure consolidation. Biology: Exchange & Transport.",
+ "Physics: Weak spots + past papers. Maths: Statistics consolidation. Biology: Genetics.",
+ "Physics: Fields revision. Maths: Coordinate geometry & vectors. Biology: DNA technology.",
+ "Physics: Astrophysics & Nuclear. Maths: Full pure consolidation. Biology: Module 6.",
+ "Exam season. Light review sessions. Physics: P1 prep. Biology: M2+M3 revision.",
+ "Physics P2 + Bio P1 week. Maths P1 prep. Exam technique focus.",
+ "Maths P2 + Bio P2 week. Physics P3 final polish.",
+ "Final week — Bio P3 (16 Jun) + Maths P3 (18 Jun). You've got this.",
+ "Final week — Bio P3 (16 Jun) + Maths P3 (18 Jun). You've got this.",
+];
+
+const SUBJ_ORDER = ['physics','maths','biology'];
+
+
+// BUILD TIMETABLE
+function buildTimetable() {
+ const nav = document.getElementById('weekNav');
+ const panels = document.getElementById('weekPanels');
+ nav.innerHTML = ''; panels.innerHTML = '';
+
+ getSchedule(); // ensure schedule is generated/loaded
+
+ const startDate = new Date('2026-03-23');
+
+ for (let w = 0; w < 13; w++) {
+ const wStart = addDays(startDate, w*7);
+ const wEnd = addDays(wStart, 6);
+ const weekExams = EXAMS.filter(e => {
+ const ed = new Date(e.date);
+ return ed >= wStart && ed <= wEnd;
+ });
+
+ // Nav btn
+ const btn = document.createElement('button');
+ btn.className = 'wk-btn' + (w===0?' active':'') + (weekExams.length?' has-exam':'');
+ btn.textContent = `W${w+1}` + (weekExams.length?' ':'');
+ btn.title = `${fmt(wStart)} – ${fmt(wEnd)}`;
+ btn.onclick = (()=>{ const idx=w; return ()=>switchWeek(idx); })();
+ nav.appendChild(btn);
+
+ // Panel
+ const panel = document.createElement('div');
+ panel.className = 'week-panel' + (w===0?' active':'');
+ panel.id = 'week-'+w;
+
+ const examStrip = weekExams.length
+ ? '<div class="exam-strip">' + weekExams.map(e=>`<div class="exam-chip"> ${e.label} · ${new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>`).join('') + '</div>'
+ : '';
+
+ // Calendar grid
+ let calHTML = `
+ <div class="week-info">
+ <h2>Week ${w+1}</h2>
+ <span class="week-dates">${fmt(wStart)} – ${fmt(wEnd)}</span>
+ </div>
+ ${examStrip}
+ <div class="cal-grid">
+ <div class="cal-day-header">Mon</div>
+ <div class="cal-day-header">Tue</div>
+ <div class="cal-day-header">Wed</div>
+ <div class="cal-day-header">Thu</div>
+ <div class="cal-day-header">Fri</div>
+ <div class="cal-day-header">Sat</div>
+ <div class="cal-day-header">Sun</div>
+ `;
+
+ for (let d = 0; d < 7; d++) {
+ const day = addDays(wStart, d);
+ const dow = day.getDay(); // Mon=1
+ const ds = dateStr(day);
+ const examsOnDay = EXAMS.filter(e => e.date === ds);
+ const dayData = getDayData(ds);
+
+ const todayStr = dateStr(new Date());
+ const isToday = ds === todayStr;
+ let cellClass = 'cal-cell';
+ if (dow === 6) cellClass += ' is-sat';
+ if (dow === 0) cellClass += ' is-sunday';
+ if (examsOnDay.length) cellClass += ' is-exam';
+ if (isToday) cellClass += ' is-today';
+
+ const dateNum = day.getDate();
+ const examBadge = examsOnDay.length
+ ? examsOnDay.map(e=>`<div class="cal-exam-badge"> ${e.label}</div>`).join('')
+ : '';
+
+ // School lessons for this day
+ const lessons = (dow >= 1 && dow <= 5 && ds < '2026-05-08') ? (SCHOOL_LESSONS[dow] || []) : [];
+
+ // Build combined time-ordered list of lessons + revision slots
+ let combinedItems = [];
+ lessons.forEach(l => combinedItems.push({ time: l.time, type: 'lesson', data: l }));
+ if (dayData.type === 'rest') {
+ combinedItems = [];
+ } else if (dayData.slots) {
+ dayData.slots.forEach(s => combinedItems.push({ time: s.time, type: 'slot', data: s }));
+ }
+ combinedItems.sort((a, b) => a.time.localeCompare(b.time));
+
+ let bodyHTML = '';
+ if (dayData.type === 'rest') {
+ bodyHTML = ds > '2026-06-18' ? '<div class="rest-label"> Done!</div>' : '<div class="rest-label">Rest day</div>';
+ } else {
+ combinedItems.forEach(item => {
+ if (item.type === 'lesson') {
+ const l = item.data;
+ bodyHTML += `<div class="lesson-pill ${l.cls}">${l.time} ${l.label}</div>`;
+ } else {
+ const s = item.data;
+ const subCls = s.subject === 'biology' ? 'bio' : s.subject === 'maths' ? 'maths' : 'physics';
+ bodyHTML += `
+ <div class="rev-slot ${subCls}">
+ <div class="rev-slot-dot ${s.rating}"></div>
+ <div class="rev-slot-text">
+ <div class="rev-slot-subj">${s.subject === 'biology' ? 'Bio' : s.subject === 'maths' ? 'Maths' : 'Physics'} · ${s.time}${s.missed ? ' ' : ''}${s.isPastPaper ? ' ' : ''}</div>
+ <div class="rev-slot-topic" style="${s.isPastPaper ? 'font-style:italic;' : ''}">${s.topic}</div>
+ <div class="rev-slot-time">${s.loc}</div>
+ </div>
+ </div>`;
+ }
+ });
+ }
+
+ const clickable = dow !== 6;
+ calHTML += `
+ <div class="${cellClass}" ${clickable ? `ontouchstart="calTouchStart(event,'${ds}',${w})" ontouchend="calTouchEnd(event,'${ds}',${w})" ontouchcancel="calTouchCancel()" onclick="openDayOverlay('${ds}',${w})"` : ''}>
+ <div class="cal-date-row">
+ <div class="cal-date-num">${dateNum}</div>
+ <div>${isToday ? '<span class="cal-today-label">TODAY</span>' : ''}${examBadge}</div>
+ </div>
+ <div class="cal-body">
+ ${bodyHTML}
+ </div>
+ </div>`;
+ }
+
+ calHTML += '</div>';
+ panel.innerHTML = calHTML;
+ panels.appendChild(panel);
+ }
+}
+
+function switchWeek(idx) {
+ document.querySelectorAll('.week-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+ document.querySelectorAll('.wk-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// DAY DETAIL OVERLAY 
+
+function openDayOverlay(ds, weekIdx) {
+ const parts = ds.split('-');
+ const date = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+ const dow = date.getDay();
+ const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+ const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+ document.getElementById('dayOverlayLabel').textContent = `${dayNames[dow]} · Week ${weekIdx+1}`;
+ document.getElementById('dayOverlayTitle').textContent = `${date.getDate()} ${monthNames[date.getMonth()]}`;
+
+ // Read directly from the pre-computed schedule — no replay needed
+ const dayData = getDayData(ds);
+ const examsToday = EXAMS.filter(e => e.date === ds);
+ const lessons = (dow >= 1 && dow <= 5 && ds < '2026-05-08') ? (SCHOOL_LESSONS[dow] || []) : [];
+ const ratingLabels = { red:'Needs work', amber:'Getting there', green:'Confident' };
+
+ const totalSlots = dayData.slots ? dayData.slots.length : 0;
+ let tickedCount = 0;
+ if (dayData.slots) dayData.slots.forEach((_,i) => { if (loadTick(ds,i)) tickedCount++; });
+ const pct = totalSlots ? Math.round(tickedCount/totalSlots*100) : 0;
+
+ // Exam banners
+ const examBanners = examsToday.map(e => `
+ <div class="today-exam-banner" style="margin-bottom:0.75rem">
+ <div class="exam-icon"></div>
+ <div class="exam-text">
+ <strong>${e.label} — Today!</strong>
+ <span>Light review only. Stay calm, trust your preparation.</span>
+ </div>
+ </div>`).join('');
+
+ // School lessons
+ const lessonsHTML = lessons.length ? `
+ <div class="today-section-label">School today</div>
+ ${lessons.map(l => `
+ <div class="today-school-pill">
+ <div class="pill-time">${l.time}</div>
+ <div class="pill-name ${l.cls}">${l.label}</div>
+ </div>`).join('')}` : '';
+
+ // Progress bar
+ const progressHTML = totalSlots ? `
+ <div class="overlay-progress-wrap">
+ <div class="overlay-progress-label">
+ <span>Revision progress</span>
+ <span id="overlay-prog-label">${tickedCount} / ${totalSlots} done</span>
+ </div>
+ <div class="overlay-progress-bar-outer">
+ <div class="overlay-progress-bar-inner" id="overlay-prog-bar" style="width:${pct}%"></div>
+ </div>
+ </div>` : '';
+
+ // Rest day
+ if (dayData.type === 'rest') {
+ document.getElementById('dayOverlayBody').innerHTML = `
+ <div class="rest-screen" style="padding:2rem 1rem">
+ <div class="rest-icon"></div>
+ <h3>Rest Day</h3>
+ <p>Saturday is your day off. Recharge — you've earned it.</p>
+ </div>`;
+ document.getElementById('dayOverlay').classList.add('open');
+ return;
+ }
+
+ // EXAM DAY MODE
+ if (examsToday.length > 0) {
+   const EXAM_INFO = {
+     physics: {
+       p1: { topics: ['Measurements & Errors', 'Particles & Radiation', 'Waves', 'Mechanics & Materials', 'Electricity'], tips: ['Show all working for calculation questions', 'State the formula before substituting values', 'Draw force or field diagrams where helpful', 'Check units at every step'] },
+       p2: { topics: ['Further Mechanics & Thermal Physics', 'Fields — gravitational, electric, magnetic', 'Capacitors', 'Electromagnetic Induction & AC'], tips: ['Sketch field lines clearly with arrows', 'Watch signs on potential and field equations', 'Label axes fully on any graph you draw', 'Check whether question asks for magnitude or direction'] },
+       p3: { topics: ['Nuclear Physics', 'Astrophysics (option)', 'Practical skills & data analysis'], tips: ['Quote uncertainties to the right number of significant figures', 'Explain any anomalous results in data questions', 'For astrophysics — use the data sheet values', 'Read graphs carefully and state readings clearly'] }
+     },
+     maths: {
+       p1: { topics: ['Pure maths — no calculator', 'Algebra, proof, coordinate geometry', 'Trigonometry, sequences & series', 'Differentiation, integration, vectors'], tips: ['Leave answers in exact form unless told otherwise', 'Show all algebraic working step by step', 'Check signs carefully — common source of errors', 'State any restrictions on domain or range'] },
+       p2: { topics: ['Pure maths — calculator allowed', 'Logarithms & exponentials', 'Numerical methods, parametric equations', 'Further integration & differential equations'], tips: ['Set calculator to correct degree/radian mode', 'Show method even when using a calculator', 'Check answers by substituting back', 'For differential equations — include +c and apply boundary conditions'] },
+       p3: { topics: ['Statistics: data, probability, distributions', 'Normal distribution & hypothesis testing', 'Mechanics: kinematics, forces, moments'], tips: ['State H0 and H1 clearly with correct inequality', 'Compare p-value to significance level explicitly', 'Draw clear force diagrams for mechanics', 'Define all variables you introduce'] }
+     },
+     biology: {
+       p1: { topics: ['Module 2 — Foundations in Biology', 'Module 3 — Exchange & Transport'], tips: ['Use correct biological terminology throughout', 'Give enough separate points to match the mark allocation', 'Include both structure AND function in describe questions', 'For 6-mark questions — plan your answer first'] },
+       p2: { topics: ['Module 4 — Biodiversity, Evolution & Disease', 'Module 5 — Communication, Homeostasis & Energy'], tips: ['Spell key terms correctly — examiners penalise poor spelling of technical words', 'Distinguish between describe and explain — explain needs a reason', 'Include specific examples to support general points', 'Check mark allocation for each part before writing'] },
+       p3: { topics: ['Module 6 — Genetics, Evolution & Ecosystems', 'Synoptic questions drawing on all modules', 'Practical & data analysis questions'], tips: ['Show all working in genetic cross diagrams', 'State null hypothesis for statistical tests', 'For practical questions — identify independent, dependent and control variables', 'Synoptic: actively link to other modules in your answer'] }
+     }
+   };
+   const examSubjKey = examsToday[0].subj === 'biology' ? 'biology' : examsToday[0].subj;
+   const paperNum = examsToday[0].label.includes('P1') ? 'p1' : examsToday[0].label.includes('P2') ? 'p2' : 'p3';
+   const info = EXAM_INFO[examSubjKey]?.[paperNum] || { topics: [], tips: [] };
+   const subjColour = examSubjKey === 'physics' ? 'var(--phy)' : examSubjKey === 'maths' ? 'var(--mat)' : 'var(--bio)';
+   const examModeHTML = `
+     <div style="margin-top:0.5rem">
+       <div class="today-section-label">Topics on this paper</div>
+       ${info.topics.map(t => `<div style="padding:0.5rem 0.9rem;background:var(--surface2);border-radius:6px;font-size:0.82rem;margin-bottom:0.35rem;border-left:3px solid ${subjColour}">${t}</div>`).join('')}
+       <div class="today-section-label" style="margin-top:1.2rem">Exam technique reminders</div>
+       ${info.tips.map(t => `<div style="padding:0.4rem 0.2rem;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.2rem;display:flex;gap:0.6rem;align-items:flex-start"><span style="color:${subjColour};font-size:1rem;line-height:1">&#8250;</span><span>${t}</span></div>`).join('')}
+     </div>`;
+   document.getElementById('dayOverlayBody').innerHTML = examBanners + examModeHTML;
+   document.getElementById('dayOverlay').dataset.ds = ds;
+   document.getElementById('dayOverlay').dataset.weekIdx = weekIdx;
+   document.getElementById('dayOverlay').classList.add('open');
+   return;
+ }
+
+ // Build slot cards
+ const slotsHTML = dayData.slots ? dayData.slots.map((s, i) => {
+ const ticked = loadTick(ds, i);
+ const subCls = s.subject === 'biology' ? 'bio' : s.subject === 'maths' ? 'maths' : 'physics';
+ const subjLabel = s.subject === 'biology' ? 'Biology' : s.subject === 'maths' ? 'Maths' : 'Physics';
+ const isMissed = s.missed || s.carriedOver;
+ return `
+ <div class="today-slot-card${ticked?' done':''}" id="ov-slot-card-${i}">
+ <div class="today-slot-header">
+ <div class="today-slot-subj ${subCls}">${subjLabel}</div>
+ <div class="today-slot-time-loc">${s.time}${s.time ? ' · ' : ''}${s.loc}</div>
+ </div>
+ <div class="today-slot-body">
+ <div class="today-slot-info">
+ <div class="today-slot-topic${ticked?' done-strike':''}">${s.topic}</div>
+ <div class="today-slot-meta">
+ ${s.isPastPaper
+ ? '<span style="font-size:0.68rem;color:var(--text-muted)"> Past paper practice</span>'
+ : `<div class="today-rating-dot ${s.rating}"></div><div class="today-rating-label">${ratingLabels[s.rating] || ''}</div>`}
+ ${isMissed ? '<span style="font-size:0.62rem;color:var(--amber)"> Carried over</span>' : ''}
+ ${ticked ? '<span style="font-size:0.62rem;color:var(--green)"> Completed</span>' : ''}
+ </div>
+ ${!ticked && !s.isPastPaper ? `<div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);font-size:0.67rem;color:var(--text-muted);line-height:1.6"><span style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:0.3rem"> How to use this hour</span>${getRevisionAdvice(s.topic, s.rating, s.subject)}</div>` : ''}
+ ${!ticked && s.isPastPaper ? `<div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);font-size:0.67rem;color:var(--text-muted);line-height:1.6"><span style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:0.3rem"> How to use this hour</span>Do a full past paper under <strong>timed, exam conditions</strong> — no notes. Then mark it strictly using the mark scheme. For every mark dropped, write a one-line note on <em>why</em> you lost it. Log your score in the Past Papers tab.</div>` : ''}
+ </div>
+ <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;flex-shrink:0"><button class="slot-done-btn${ticked?' slot-done-active':''}" onclick="overlayToggleTick('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}','${s.rating}')" id="ov-tick-btn-${i}" title="Done"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>${!ticked && !s.missed ? `<button class="slot-miss-btn" onclick="markSlotMissed('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}</div>
+ </div>
+ </div>`;
+ }).join('') : '';
+
+ document.getElementById('dayOverlayBody').innerHTML = `
+ ${examBanners}
+ ${progressHTML}
+ ${lessonsHTML}
+ <div class="today-section-label" style="margin-top:${lessons.length?'1rem':'0'}">Revision slots</div>
+ ${slotsHTML || '<div style="color:var(--text-dim);font-size:0.75rem;padding:0.5rem 0">No revision slots scheduled.</div>'}`;
+
+ document.getElementById('dayOverlay').dataset.ds = ds;
+ document.getElementById('dayOverlay').dataset.weekIdx = weekIdx;
+ document.getElementById('dayOverlay').classList.add('open');
+}
+
+function closeDayOverlay() {
+ document.getElementById('dayOverlay').classList.remove('open');
+ // Rebuild timetable so tick states show in calendar if needed
+}
+
+function overlayToggleTick(ds, idx, subj, topic, currentRating) {
+ const wasTicked = loadTick(ds, idx);
+ if (wasTicked) {
+ saveTick(ds, idx, false);
+ refreshOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+ } else {
+ saveTick(ds, idx, true);
+ clearMissed(subj, topic);
+ refreshOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+ // Prompt rating update
+ modalPendingSubj = subj;
+ modalPendingTopic = topic;
+ document.getElementById('modalTopicText').innerHTML = `How confident do you feel about <strong>${topic}</strong> now?`;
+ document.getElementById('ratingModal').classList.add('open');
+ }
+}
+
+function refreshOverlay(ds, weekIdx) {
+ openDayOverlay(ds, weekIdx);
+}
+
+// Update overlay progress bar
+function updateOverlayProgress(ds) {
+ const bar = document.getElementById('overlay-prog-bar');
+ const label = document.getElementById('overlay-prog-label');
+ if (!bar || !label) return;
+ const cards = document.querySelectorAll('[id^="ov-slot-card-"]');
+ const total = cards.length;
+ let done = 0;
+ for (let i=0;i<total;i++) { if (loadTick(ds,i)) done++; }
+ const pct = total ? Math.round(done/total*100) : 0;
+ bar.style.width = pct+'%';
+ label.textContent = done+' / '+total+' done';
+}
+
+// MISSED SLOT TRACKING 
+
+function getMissedTopics() {
+ try {
+ const saved = localStorage.getItem('alevel_missed');
+ return saved ? JSON.parse(saved) : {};
+ } catch(e) { return {}; }
+}
+
+function saveMissedTopics(missed) {
+ try { localStorage.setItem('alevel_missed', JSON.stringify(missed)); } catch(e) {}
+}
+
+// Call at midnight check / on load — mark any unticked slots from past days as missed
+function checkForMissedSlots() {
+ const todayDs = dateStr(new Date());
+ const start = new Date('2026-03-23');
+ const missed = getMissedTopics();
+ let changed = false;
+
+ // Scan ticks for all past days; any slot key that exists as '0' (unticked) = missed
+ // We also scan for keys that never got set (no entry = never opened that day = missed)
+ // Strategy: store a 'day_logged_YYYY-MM-DD' key when we build today, then check previous days
+ try {
+ const keys = Object.keys(localStorage);
+ keys.forEach(k => {
+ if (!k.startsWith('tick_')) return;
+ const parts = k.split('_'); // tick_YYYY-MM-DD_idx
+ if (parts.length < 3) return;
+ const ds = parts[1];
+ const idx = parseInt(parts[2]);
+ if (ds >= todayDs) return; // only past days
+ const val = localStorage.getItem(k);
+ if (val !== '1') {
+ // This slot was not ticked — we need to find which topic it was
+ // Topics are stored with day slot data; retrieve from slotTopicStore
+ const topicKey = 'slottopic_' + ds + '_' + idx;
+ const stored = localStorage.getItem(topicKey);
+ if (stored) {
+ const { subj, topic } = JSON.parse(stored);
+ const mKey = subj + '|' + topic;
+ if (!missed[mKey]) {
+ missed[mKey] = { subj, topic, count: 0 };
+ }
+ missed[mKey].count++;
+ changed = true;
+ // Remove the tick key so we don't double count
+ localStorage.removeItem(k);
+ localStorage.removeItem(topicKey);
+ }
+ }
+ });
+ } catch(e) {}
+
+ if (changed) saveMissedTopics(missed);
+}
+
+// Store topic info when a day's slots are built so we can retrieve later
+function storeSlotTopics(ds, slots) {
+ try {
+ slots.forEach((s, i) => {
+ const topicKey = 'slottopic_' + ds + '_' + i;
+ // Only store if not already stored (don't overwrite)
+ if (!localStorage.getItem(topicKey)) {
+ localStorage.setItem(topicKey, JSON.stringify({ subj: s.subject, topic: s.topic }));
+ }
+ });
+ } catch(e) {}
+}
+
+// Get missed topics for a subject as a prioritised list (most missed first)
+function getMissedForSubject(subj) {
+ const missed = getMissedTopics();
+ return Object.values(missed)
+ .filter(m => m.subj === subj)
+ .sort((a, b) => b.count - a.count)
+ .map(m => m.topic);
+}
+
+// Clear a topic from missed once it's been ticked
+function clearMissed(subj, topic) {
+ const missed = getMissedTopics();
+ const mKey = subj + '|' + topic;
+ if (missed[mKey]) {
+ delete missed[mKey];
+ saveMissedTopics(missed);
+ }
+}
+
+// TODAY PAGE 
+
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Tick storage key: "ticks_YYYY-MM-DD_slotIndex"
+function tickKey(ds, idx) { return 'tick_' + ds + '_' + idx; }
+
+function loadTick(ds, idx) {
+ try { return localStorage.getItem(tickKey(ds, idx)) === '1'; } catch(e) { return false; }
+}
+
+function saveTick(ds, idx, val) {
+ try { localStorage.setItem(tickKey(ds, idx), val ? '1' : '0'); } catch(e) {}
+}
+
+let modalPendingSubj = null;
+let modalPendingTopic = null;
+let modalPendingDs = null;
+let modalPendingIdx = null;
+
+function refreshSlotCard(ds, idx) {
+ // Rebuild today page to reflect tick state change
+ }
+
+function updateTodayProgress(ds) {
+ const bar = document.getElementById('today-prog-bar');
+ const label = document.getElementById('today-prog-label');
+ if (!bar || !label) return;
+ const cards = document.querySelectorAll('[id^="slot-card-"]');
+ const total = cards.length;
+ let done = 0;
+ for (let i = 0; i < total; i++) { if (loadTick(ds, i)) done++; }
+ const pct = total ? Math.round(done/total*100) : 0;
+ bar.style.width = pct + '%';
+ label.textContent = done + ' / ' + total + ' done';
+}
+
+function submitModalRating(newRating) {
+ if (modalPendingSubj && modalPendingTopic) {
+ if (!ratings[modalPendingSubj]) ratings[modalPendingSubj] = {};
+ ratings[modalPendingSubj][modalPendingTopic] = newRating;
+ saveRatings();
+ // Regenerate schedule so traffic-light ordering reflects the new rating
+ resetAndRegenerateSchedule();
+ buildTimetable();
+ updateTLStats();
+ showToast('Rating updated to ' + newRating + ' ');
+ buildTracker();
+ }
+ closeModal();
+ }
+
+function closeModal() {
+ document.getElementById('ratingModal').classList.remove('open');
+ modalPendingSubj = null; modalPendingTopic = null;
+}
+
+// COUNTDOWN PAGE 
+
+// School lessons per subject per day-of-week
+// Physics: Mon(1), Wed(1), Thu(1) = 3/week
+// Maths: Mon(2), Tue(1), Thu(1) = 4/week (Maths + Maths Support on Mon)
+// Biology: Tue(1), Wed(1), Fri(2) = 4/week (Bio + Bio Booster on Fri)
+// School ends 8 May 2026
+
+function buildCountdownPage() {
+ const today = new Date();
+ const todayDs = dateStr(today);
+ const schoolEndDs = '2026-05-08';
+ const container = document.getElementById('countdown-content');
+
+ function daysUntilExam(examDs) {
+ const parts = examDs.split('-');
+ const examDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+ const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+ return Math.max(0, Math.ceil((examDate - todayMidnight) / (1000*60*60*24)));
+ }
+
+ // Count remaining school lessons per subject up to school end or exam date (whichever is sooner)
+ // Physics lessons: Mon(14:00), Wed(14:00-16:00 = 1 lesson), Thu(13:00)
+ // Maths lessons: Mon(09:00 + 10:00 = 2 lessons), Tue(15:00), Thu(10:00)
+ // Bio lessons: Tue(14:00), Wed(09:00-11:00 = 1 lesson), Fri(10:00 + 13:00 = 2 lessons)
+ const lessonDays = {
+ physics: [1, 3, 4], // Mon, Wed, Thu — 1 lesson each
+ maths: [1, 1, 2, 4], // Mon x2 (Maths + Support), Tue, Thu
+ biology: [2, 3, 5, 5], // Tue, Wed, Fri x2 (Bio + Booster)
+ };
+ // Simplified: lessons per week day (dow)
+ const lessonsPerDow = {
+ physics: { 1:1, 3:1, 4:1 },
+ maths: { 1:2, 2:1, 4:1 },
+ biology: { 2:1, 3:1, 5:2 },
+ };
+
+ function countLessons(subj, untilDs) {
+ const limitDs = untilDs < schoolEndDs ? untilDs : schoolEndDs;
+ let count = 0;
+ const cur = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+ while (true) {
+ const ds = dateStr(cur);
+ if (ds >= limitDs) break;
+ if (ds > todayDs) { // only future days
+ const dow = cur.getDay();
+ count += (lessonsPerDow[subj][dow] || 0);
+ }
+ cur.setDate(cur.getDate() + 1);
+ }
+ return count;
+ }
+
+ const examsWithSubj = [
+ { date:'2026-05-20', label:'Physics Paper 1', subj:'physics' },
+ { date:'2026-06-01', label:'Physics Paper 2', subj:'physics' },
+ { date:'2026-06-03', label:'Maths Paper 1', subj:'maths' },
+ { date:'2026-06-04', label:'Biology Paper 1', subj:'biology' },
+ { date:'2026-06-08', label:'Physics Paper 3', subj:'physics' },
+ { date:'2026-06-11', label:'Maths Paper 2', subj:'maths' },
+ { date:'2026-06-12', label:'Biology Paper 2', subj:'biology' },
+ { date:'2026-06-16', label:'Biology Paper 3', subj:'biology' },
+ { date:'2026-06-18', label:'Maths Paper 3', subj:'maths' },
+ ];
+
+ const subjCls = { physics:'physics-card', maths:'maths-card', biology:'bio-card' };
+ const subjLabel = { physics:'Physics', maths:'Maths', biology:'Biology' };
+
+ const cardsHTML = examsWithSubj.map(e => {
+ const days = daysUntilExam(e.date);
+ const lessons = countLessons(e.subj, e.date);
+ const parts = e.date.split('-');
+ const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+ const dateFormatted = dateObj.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+ const urgent = days <= 14 ? 'color:var(--red)' : days <= 30 ? 'color:var(--amber)' : '';
+ return `
+ <div class="countdown-card ${subjCls[e.subj]}">
+ <div>
+ <div class="exam-name">${e.label}</div>
+ <div class="exam-date-label">${dateFormatted}</div>
+ ${lessons > 0 ? `<div class="exam-date-label" style="margin-top:0.3rem"> ${lessons} school lesson${lessons!==1?'s':''} remaining</div>` : '<div class="exam-date-label" style="margin-top:0.3rem;color:var(--amber)"> No more school lessons before this exam</div>'}
+ </div>
+ <div>
+ <div class="days-left" style="${urgent}">${days}<span>days to go</span></div>
+ </div>
+ </div>`;
+ }).join('');
+
+ container.innerHTML = `
+ <div class="today-date-banner">
+ <h2>Your <em>Exams</em></h2>
+ </div>
+ <div class="countdown-grid">${cardsHTML}</div>`;
+}
+
+// PAST PAPERS PAGE 
+
+const PAST_PAPERS = {
+ physics: [
+ {year:2024,paper:1},{year:2024,paper:2},{year:2024,paper:3},
+ {year:2023,paper:1},{year:2023,paper:2},{year:2023,paper:3},
+ {year:2022,paper:1},{year:2022,paper:2},{year:2022,paper:3},
+ {year:2021,paper:1},{year:2021,paper:2},{year:2021,paper:3},
+ {year:2020,paper:1},{year:2020,paper:2},{year:2020,paper:3},
+ ],
+ maths: [
+ {year:2024,paper:1},{year:2024,paper:2},{year:2024,paper:3},
+ {year:2023,paper:1},{year:2023,paper:2},{year:2023,paper:3},
+ {year:2022,paper:1},{year:2022,paper:2},{year:2022,paper:3},
+ {year:2021,paper:1},{year:2021,paper:2},{year:2021,paper:3},
+ {year:2020,paper:1},{year:2020,paper:2},{year:2020,paper:3},
+ ],
+ biology: [
+ {year:2024,paper:1},{year:2024,paper:2},{year:2024,paper:3},
+ {year:2023,paper:1},{year:2023,paper:2},{year:2023,paper:3},
+ {year:2022,paper:1},{year:2022,paper:2},{year:2022,paper:3},
+ {year:2021,paper:1},{year:2021,paper:2},{year:2021,paper:3},
+ {year:2020,paper:1},{year:2020,paper:2},{year:2020,paper:3},
+ ]
+};
+
+function ppKey(subj, year, paper) { return `pp_${subj}_${year}_${paper}`; }
+
+function getPPData() {
+ try { return JSON.parse(localStorage.getItem('alevel_pp2') || '{}'); } catch(e) { return {}; }
+}
+
+function savePPData(data) {
+ try { localStorage.setItem('alevel_pp2', JSON.stringify(data)); } catch(e) {}
+}
+
+function getPPEntry(subj, year, paper) {
+ return getPPData()[ppKey(subj, year, paper)] || null;
+}
+
+// Status: null = not started, 'inprogress' = in progress, 'done' = completed
+let ppCurrentSubj = 'physics';
+let ppEditKey = null;
+
+function buildPastPapersPage() {
+  const container = document.getElementById('pp-content');
+  const data = getPPData();
+  const subjColour = { physics:'var(--phy)', maths:'var(--mat)', biology:'var(--bio)' };
+  const subjShort  = { physics:'Physics', maths:'Maths', biology:'Biology' };
+
+  let totalDone=0, totalInProg=0, totalAll=0;
+  ['physics','maths','biology'].forEach(function(subj) {
+    PAST_PAPERS[subj].forEach(function(p) {
+      totalAll++;
+      var e = getPPEntry(subj,p.year,p.paper);
+      if (e && e.status==='done') totalDone++;
+      else if (e && e.status==='inprogress') totalInProg++;
+    });
+  });
+
+  // Completed list
+  var allCompleted = [];
+  ['physics','maths','biology'].forEach(function(subj) {
+    PAST_PAPERS[subj].forEach(function(p) {
+      var e = getPPEntry(subj,p.year,p.paper);
+      if (e && e.status==='done') {
+        allCompleted.push({ subj:subj, year:p.year, paper:p.paper, score:e.score||'', time:e.time||'', date:e.date||'', key:ppKey(subj,p.year,p.paper) });
+      }
+    });
+  });
+
+  // In progress list
+  var allInProg = [];
+  ['physics','maths','biology'].forEach(function(subj) {
+    PAST_PAPERS[subj].forEach(function(p) {
+      var e = getPPEntry(subj,p.year,p.paper);
+      if (e && e.status==='inprogress') {
+        allInProg.push({ subj:subj, year:p.year, paper:p.paper, key:ppKey(subj,p.year,p.paper), startTime:e.startTime||null, elapsed:e.elapsed||0, paused:e.paused||false });
+      }
+    });
+  });
+
+  var completedHTML = allCompleted.length ? allCompleted.map(function(c) {
+    return '<div class="pp-completed-row">' +
+      '<div class="pp-completed-badge" style="border-color:' + subjColour[c.subj] + ';color:' + subjColour[c.subj] + '">' + subjShort[c.subj] + '</div>' +
+      '<div class="pp-completed-info">' +
+        '<div class="pp-completed-name">' + c.year + ' — Paper ' + c.paper + '</div>' +
+        '<div class="pp-completed-meta">' +
+          (c.score ? '<span class="pp-score-display">' + c.score + '</span>' : '') +
+          (c.time ? '<span class="pp-time-display">' + formatMins(c.time) + '</span>' : '') +
+          '<span class="pp-date-display">' + c.date + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:0.4rem">' +
+        '<button class="pp-action-btn edit-btn" onclick="openEditTime(\'' + c.key + '\')" >Edit time</button>' +
+        '<button class="pp-action-btn reset-btn" onclick="ppResetEntry(\'' + c.key + '\')">X</button>' +
+      '</div>' +
+    '</div>';
+  }).join('')
+  : '<div style="color:var(--text-dim);font-size:0.72rem;padding:0.5rem 0">No completed papers yet.</div>';
+
+  var inProgHTML = allInProg.length ? allInProg.map(function(c) {
+    var elapsed = c.elapsed || 0;
+    var isRunning = c.startTime && !c.paused;
+    if (isRunning) elapsed += Math.floor((Date.now() - c.startTime) / 1000);
+    var timeStr = formatSeconds(elapsed);
+    return '<div class="pp-completed-row" style="border-color:rgba(251,146,60,0.3);background:rgba(251,146,60,0.04)">' +
+      '<div class="pp-completed-badge" style="border-color:' + subjColour[c.subj] + ';color:' + subjColour[c.subj] + '">' + subjShort[c.subj] + '</div>' +
+      '<div class="pp-completed-info">' +
+        '<div class="pp-completed-name">' + c.year + ' — Paper ' + c.paper + '</div>' +
+        '<div class="pp-completed-meta">' +
+          '<span class="pp-time-display" id="live-timer-' + c.key + '">' + timeStr + '</span>' +
+          '<span class="pp-status-badge inprog">' + (isRunning ? 'Running' : 'Paused') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:0.4rem;flex-wrap:wrap">' +
+        (isRunning
+          ? '<button class="pp-timer-btn pause" onclick="ppPauseTimer(\'' + c.key + '\')">Pause</button>'
+          : '<button class="pp-timer-btn start" onclick="ppResumeTimer(\'' + c.key + '\')">Resume</button>') +
+        '<button class="pp-timer-btn finish" onclick="ppFinishTimer(\'' + c.key + '\')">Finish</button>' +
+        '<button class="pp-action-btn reset-btn" onclick="ppResetEntry(\'' + c.key + '\')">X</button>' +
+      '</div>' +
+    '</div>';
+  }).join('')
+  : '<div style="color:var(--text-dim);font-size:0.72rem;padding:0.5rem 0">Nothing in progress.</div>';
+
+  // Build score graph
+  const graphHTML = buildScoreGraph(ppCurrentSubj);
+
+  container.innerHTML =
+    '<div class="today-date-banner"><h2>Past <em>Papers</em></h2></div>' +
+    graphHTML +
+    '<div class="pp-stats-bar" style="margin-bottom:2rem">' +
+      '<div class="pp-stat"><span class="pp-stat-num done-col">' + totalDone + '</span><span class="pp-stat-lbl">Done</span></div>' +
+      '<div class="pp-stat"><span class="pp-stat-num inprog-col">' + totalInProg + '</span><span class="pp-stat-lbl">In Progress</span></div>' +
+      '<div class="pp-stat"><span class="pp-stat-num">' + (totalAll-totalDone-totalInProg) + '</span><span class="pp-stat-lbl">Not started</span></div>' +
+      '<div class="pp-stat"><span class="pp-stat-num">' + totalAll + '</span><span class="pp-stat-lbl">Total</span></div>' +
+    '</div>' +
+    '<div class="pp-terminal">' +
+      '<div class="pp-terminal-header">Start a Past Paper</div>' +
+      '<div class="pp-terminal-body">' +
+        '<div class="pp-form-row">' +
+          '<div class="pp-form-field"><label class="pp-form-label">Subject</label>' +
+            '<select class="pp-select" id="pp-sel-subj">' +
+              '<option value="physics">Physics (AQA)</option>' +
+              '<option value="maths">Maths (AQA)</option>' +
+              '<option value="biology">Biology (OCR)</option>' +
+            '</select></div>' +
+          '<div class="pp-form-field"><label class="pp-form-label">Year</label>' +
+            '<select class="pp-select" id="pp-sel-year">' +
+              '<option value="2024">2024</option><option value="2023">2023</option>' +
+              '<option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option>' +
+            '</select></div>' +
+          '<div class="pp-form-field"><label class="pp-form-label">Paper</label>' +
+            '<select class="pp-select" id="pp-sel-paper">' +
+              '<option value="1">Paper 1</option><option value="2">Paper 2</option><option value="3">Paper 3</option>' +
+            '</select></div>' +
+        '</div>' +
+        '<div class="pp-form-actions">' +
+          '<button class="pp-timer-btn start" onclick="ppStartTimer()">Start Timer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="countdown-section-label" style="margin-top:2rem">In Progress</div>' +
+    inProgHTML +
+    '<div class="countdown-section-label" style="margin-top:1.5rem">Completed Papers</div>' +
+    completedHTML;
+
+  // Start live timer ticks
+  startLiveTimers();
+}
+
+// ── Timer helpers ─────────────────────────────────────────────────────────────
+var liveTimerInterval = null;
+
+function formatSeconds(secs) {
+  var h = Math.floor(secs / 3600);
+  var m = Math.floor((secs % 3600) / 60);
+  var s = secs % 60;
+  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function formatMins(mins) {
+  var m = parseInt(mins);
+  if (isNaN(m)) return mins;
+  if (m >= 60) return Math.floor(m/60) + 'h ' + (m%60) + 'm';
+  return m + ' mins';
+}
+
+function startLiveTimers() {
+  if (liveTimerInterval) clearInterval(liveTimerInterval);
+  liveTimerInterval = setInterval(function() {
+    var data = getPPData();
+    Object.keys(data).forEach(function(key) {
+      var e = data[key];
+      if (e.status === 'inprogress' && e.startTime && !e.paused) {
+        var elapsed = (e.elapsed || 0) + Math.floor((Date.now() - e.startTime) / 1000);
+        var el = document.getElementById('live-timer-' + key);
+        if (el) el.textContent = formatSeconds(elapsed);
+      }
+    });
+  }, 1000);
+}
+
+function ppStartTimer() {
+  var subj  = document.getElementById('pp-sel-subj').value;
+  var year  = parseInt(document.getElementById('pp-sel-year').value);
+  var paper = parseInt(document.getElementById('pp-sel-paper').value);
+  var key = ppKey(subj, year, paper);
+  var data = getPPData();
+  if (data[key] && data[key].status === 'inprogress') {
+    showToast('This paper is already in progress');
+    return;
+  }
+  if (!data[key]) data[key] = {};
+  data[key].status = 'inprogress';
+  data[key].startTime = Date.now();
+  data[key].elapsed = 0;
+  data[key].paused = false;
+  savePPData(data);
+  buildPastPapersPage();
+  showToast('Timer started');
+}
+
+function ppPauseTimer(key) {
+  var data = getPPData();
+  if (!data[key]) return;
+  var now = Date.now();
+  data[key].elapsed = (data[key].elapsed || 0) + Math.floor((now - data[key].startTime) / 1000);
+  data[key].startTime = null;
+  data[key].paused = true;
+  savePPData(data);
+  buildPastPapersPage();
+}
+
+function ppResumeTimer(key) {
+  var data = getPPData();
+  if (!data[key]) return;
+  data[key].startTime = Date.now();
+  data[key].paused = false;
+  savePPData(data);
+  buildPastPapersPage();
+}
+
+var ppFinishKey = null;
+
+var ppFinishKey = null;
+var ppFinishMins = 0;
+
+function ppFinishTimer(key) {
+  var data = getPPData();
+  if (!data[key]) return;
+  var elapsed = data[key].elapsed || 0;
+  if (data[key].startTime && !data[key].paused) {
+    elapsed += Math.floor((Date.now() - data[key].startTime) / 1000);
+  }
+  ppFinishKey = key;
+  ppFinishMins = Math.round(elapsed / 60);
+  document.getElementById('finishScoreInput').value = '';
+  document.getElementById('finishTimeDisplay').textContent = 'Time: ' + formatMins(ppFinishMins);
+  document.getElementById('finishScoreOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('finishScoreInput').focus(); }, 100);
+}
+
+function confirmFinish() {
+  var score = document.getElementById('finishScoreInput').value.trim();
+  if (!score) { showToast('Please enter your score'); return; }
+  var data = getPPData();
+  data[ppFinishKey].status = 'done';
+  data[ppFinishKey].score = score;
+  data[ppFinishKey].time = ppFinishMins;
+  data[ppFinishKey].date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  delete data[ppFinishKey].startTime;
+  delete data[ppFinishKey].paused;
+  savePPData(data);
+  document.getElementById('finishScoreOverlay').classList.remove('open');
+  if (liveTimerInterval) clearInterval(liveTimerInterval);
+  buildPastPapersPage();
+  showToast('Paper complete');
+}
+
+function cancelFinish() {
+  document.getElementById('finishScoreOverlay').classList.remove('open');
+  ppFinishKey = null;
+}
+
+var editTimeKey = null;
+
+function openEditTime(key) {
+  editTimeKey = key;
+  var data = getPPData();
+  var existing = (data[key] && data[key].time) ? data[key].time : '';
+  document.getElementById('editTimeInput').value = existing;
+  document.getElementById('editTimeOverlay').classList.add('open');
+}
+
+function closeEditTime() {
+  document.getElementById('editTimeOverlay').classList.remove('open');
+  editTimeKey = null;
+}
+
+function saveEditTime() {
+  var val = document.getElementById('editTimeInput').value.trim();
+  if (!val) { showToast('Please enter a time'); return; }
+  var data = getPPData();
+  if (!data[editTimeKey]) data[editTimeKey] = {};
+  data[editTimeKey].time = parseInt(val);
+  savePPData(data);
+  closeEditTime();
+  buildPastPapersPage();
+  showToast('Time updated');
+}
+
+function ppResetEntry(key) {
+  var data = getPPData();
+  delete data[key];
+  savePPData(data);
+  if (liveTimerInterval) clearInterval(liveTimerInterval);
+  buildPastPapersPage();
+  showToast('Entry removed');
+}
+
+function openPPScoreEntry(key, label) { ppEditKey = key; }
+function closeScoreModal() {}
+function saveScore() {}
+
+// REVISION ADVICE FOR TODAY SLOTS 
+function getRevisionAdvice(topic, rating, subject) {
+ const adviceByRating = {
+ red: [
+ `Start from scratch — watch a YouTube explanation of <strong>${topic}</strong> first (try PMT or Science Shorts), then make a condensed set of notes in your own words. Don't attempt practice questions until you feel you understand the basics.`,
+ `For <strong>${topic}</strong> you're starting from low confidence. Use the PMT revision notes to build understanding first, then try 2–3 worked examples before attempting any questions yourself.`,
+ `<strong>${topic}</strong> is a weak area — spend the first 20 mins reading through your class notes or a textbook explanation, then spend 30 mins on PMT flashcards to test yourself. Leave the last 10 mins to write a summary.`,
+ ],
+ amber: [
+ `You have some understanding of <strong>${topic}</strong> — use this session to close the gaps. Try a past paper question on this topic first to identify exactly what trips you up, then go back to your notes to fix those specific points.`,
+ `For <strong>${topic}</strong> focus on the tricky details you keep getting wrong. Do 20 mins of flashcard practice, then attempt a timed exam question and mark it against the mark scheme carefully.`,
+ `<strong>${topic}</strong> is almost there — spend this hour doing exam-style questions under timed conditions. After each question, check your answer against the mark scheme and note any mark scheme language you missed.`,
+ ],
+ green: [
+ `You're confident with <strong>${topic}</strong> — use this session to maintain it. Do a quick 10-min brain dump of everything you know, then spend 30 mins on past paper questions to stay sharp. Aim for full marks.`,
+ `Light review for <strong>${topic}</strong> — test yourself with PMT flashcards for 15 mins, then attempt one full exam question under timed conditions. If you get full marks, move on.`,
+ `<strong>${topic}</strong> is solid — spend 20 mins on the hardest questions you can find on this topic to really cement it, then use the remaining time to help a weaker linked topic.`,
+ ]
+ };
+
+ const options = adviceByRating[rating] || adviceByRating.amber;
+ // Pick deterministically based on topic string length
+ const idx = topic.length % options.length;
+ return options[idx];
+}
+
+
+function filterTLTopics(query) {
+  var q = query.toLowerCase().trim();
+
+  // Get currently active subject panel only
+  var activeSub = document.querySelector('.tl-sub-btn.active');
+  var activeSubj = 'physics';
+  if (activeSub) {
+    activeSubj = activeSub.classList.contains('phy') ? 'physics' : activeSub.classList.contains('mat') ? 'maths' : 'biology';
+  }
+  var activePanel = document.getElementById('tl-panel-' + activeSubj);
+
+  if (!q) {
+    if (activePanel) {
+      activePanel.querySelectorAll('.tl-topic-row').forEach(function(r) { r.classList.remove('tl-hidden'); });
+      activePanel.querySelectorAll('.tl-section').forEach(function(s) { s.classList.remove('tl-section-hidden'); });
+    }
+    return;
+  }
+
+  if (!activePanel) return;
+
+  activePanel.querySelectorAll('.tl-topic-row').forEach(function(row) {
+    var name = '';
+    var nameEl = row.querySelector('.tl-topic-name');
+    if (nameEl) name = nameEl.textContent.toLowerCase();
+    row.classList.toggle('tl-hidden', name.indexOf(q) === -1);
+  });
+
+  activePanel.querySelectorAll('.tl-section').forEach(function(sec) {
+    var visibleRows = sec.querySelectorAll('.tl-topic-row:not(.tl-hidden)');
+    sec.classList.toggle('tl-section-hidden', visibleRows.length === 0);
+    if (visibleRows.length > 0) sec.classList.remove('collapsed');
+  });
+}
+
+// TRAFFIC LIGHT TRACKER 
+function buildTracker() {
+ const container = document.getElementById('tl-panels');
+ container.innerHTML = '';
+
+ for (const [subjKey, subjData] of Object.entries(SUBJECTS)) {
+ const panel = document.createElement('div');
+ panel.className = 'tl-subject-panel' + (subjKey==='physics'?' active':'');
+ panel.id = 'tl-panel-'+subjKey;
+
+ const total = subjData.sections.reduce((a,s)=>a+s.topics.length,0);
+
+ panel.innerHTML = `
+ <div class="tl-prog-wrap">
+ <div class="tl-prog-label">
+ <span id="tl-rated-${subjKey}">0</span> / ${total} rated
+ <span id="tl-subj-counts-${subjKey}"></span>
+ </div>
+ <div class="tl-prog-bar"><div class="tl-prog-inner" id="tl-prog-${subjKey}" style="width:0%"></div></div>
+ </div>
+ `;
+
+ for (const sec of subjData.sections) {
+ const secEl = document.createElement('div');
+ secEl.className = 'tl-section';
+
+ const header = document.createElement('div');
+ header.className = 'tl-sec-header';
+ header.innerHTML = `<span>${sec.name}</span><span class="tl-sec-chevron"></span>`;
+ header.onclick = () => secEl.classList.toggle('collapsed');
+ secEl.appendChild(header);
+
+ const body = document.createElement('div');
+ body.className = 'tl-sec-body';
+
+ for (const topic of sec.topics) {
+ const row = document.createElement('div');
+ const currentRating = ratings[subjKey]?.[topic] || null;
+ row.className = 'tl-topic-row' + (currentRating ? ' is-'+currentRating : '');
+ row.id = `tlrow-${subjKey}-${topic.replace(/[^a-z0-9]/gi,'_')}`;
+
+ const btns = document.createElement('div');
+ btns.className = 'tl-btns';
+
+ for (const col of ['red','amber','green']) {
+ const btn = document.createElement('button');
+ btn.className = 'tl-btn ' + col + (currentRating===col?' sel':'');
+ btn.onclick = () => setRating(subjKey, topic, col, row, btns);
+ btns.appendChild(btn);
+ }
+
+ row.innerHTML = `<div class="tl-topic-name">${topic}</div>`;
+ row.appendChild(btns);
+ body.appendChild(row);
+ }
+
+ secEl.appendChild(body);
+ panel.appendChild(secEl);
+ }
+
+ container.appendChild(panel);
+ }
+
+ updateTLStats();
+}
+
+function setRating(subj, topic, colour, row, btns) {
+ if (!ratings[subj]) ratings[subj] = {};
+ ratings[subj][topic] = colour;
+ saveRatings();
+
+ btns.querySelectorAll('.tl-btn').forEach(b => {
+ b.classList.toggle('sel', b.classList.contains(colour));
+ });
+ row.classList.remove('is-red','is-amber','is-green');
+ row.classList.add('is-'+colour);
+
+ updateTLStats();
+ showToast('Saved ');
+}
+
+function switchTLSubject(subj) {
+ document.querySelectorAll('.tl-subject-panel').forEach(p => p.classList.remove('active'));
+ document.getElementById('tl-panel-'+subj).classList.add('active');
+ document.querySelectorAll('.tl-sub-btn').forEach(b => b.classList.remove('active'));
+ document.querySelector(`.tl-sub-btn.${SUBJECTS[subj].cls}`).classList.add('active');
+}
+
+function updateTLStats() {
+ let totalR=0, totalA=0, totalG=0;
+
+ for (const [subjKey, subjData] of Object.entries(SUBJECTS)) {
+ let r=0,a=0,g=0,rated=0;
+ const total = subjData.sections.reduce((acc,s)=>acc+s.topics.length,0);
+
+ for (const sec of subjData.sections) {
+ for (const topic of sec.topics) {
+ const v = ratings[subjKey]?.[topic];
+ if (v==='red') {r++;rated++;}
+ else if (v==='amber') {a++;rated++;}
+ else if (v==='green') {g++;rated++;}
+ }
+ }
+
+ const ratedEl = document.getElementById('tl-rated-'+subjKey);
+ const progEl = document.getElementById('tl-prog-'+subjKey);
+ const countsEl = document.getElementById('tl-subj-counts-'+subjKey);
+ if (ratedEl) ratedEl.textContent = rated;
+ if (progEl) progEl.style.width = (rated/total*100)+'%';
+ if (countsEl) countsEl.innerHTML = `<span style="color:var(--red)">${r}</span> <span style="color:var(--amber)">🟡${a}</span> <span style="color:var(--green)">🟢${g}</span>`;
+
+ totalR+=r; totalA+=a; totalG+=g;
+ }
+
+ document.getElementById('tl-total-red').textContent = totalR;
+ document.getElementById('tl-total-amber').textContent = totalA;
+ document.getElementById('tl-total-green').textContent = totalG;
+
+
+}
+
+
+// PAGE SWITCHING 
+function switchPage(page) {
+ document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+ document.querySelectorAll('.btab').forEach(t => t.classList.remove('active'));
+ document.getElementById('page-'+page).classList.add('active');
+ var btn = document.querySelector('.btab[data-page="'+page+'"]');
+ if (btn) btn.classList.add('active');
+}
+
+function showToast(msg) {
+ const t = document.getElementById('toast');
+ t.textContent = msg;
+ t.classList.add('show');
+ setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// INIT 
+buildTimetable();
+buildTracker();
+buildCountdownPage();
+buildPastPapersPage();
+
+// Jump to current week on load
+(function() {
+ const today = new Date();
+ const start = new Date('2026-03-23');
+ const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+ const currentWeek = Math.max(0, Math.min(12, Math.floor(diffDays / 7)));
+ if (diffDays >= 0) switchWeek(currentWeek);
+ // Default to Today tab
+ switchPage('timetable');
+})();
+
+// ── BOTTOM TAB BAR ───────────────────────────────────────────────────────────
+
+// ── JUMP TO TODAY ─────────────────────────────────────────────────────────────
+function jumpToToday() {
+  switchPage('timetable');
+  var today = new Date();
+  var start = new Date('2026-03-23');
+  var diffDays = Math.floor((today - start) / (1000*60*60*24));
+  var currentWeek = Math.max(0, Math.min(12, Math.floor(diffDays/7)));
+  switchWeek(currentWeek);
+  setTimeout(function() {
+    var todayCell = document.querySelector('.cal-cell.is-today');
+    if (todayCell) todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 150);
+}
+
+// ── LONG-PRESS PREVIEW ────────────────────────────────────────────────────────
+var calLongPressTimer = null;
+
+function calTouchStart(e, ds, w) {
+  calLongPressTimer = setTimeout(function() {
+    calLongPressTimer = null;
+    openDayOverlay(ds, w);
+  }, 600);
+}
+
+function calTouchEnd(e, ds, w) {
+  if (calLongPressTimer) { clearTimeout(calLongPressTimer); calLongPressTimer = null; }
+}
+
+function calTouchCancel() {
+  if (calLongPressTimer) { clearTimeout(calLongPressTimer); calLongPressTimer = null; }
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+// ── NOTES ─────────────────────────────────────────────────────────────────────
+var noteCanvas = null, noteCtx = null, noteDrawing = false;
+var noteTool = 'pen', noteHistory = [], noteStrokeSize = 2;
+
+function showNewNoteForm() {
+  document.getElementById('note-form').style.display = 'block';
+  setTimeout(initNoteCanvas, 60);
+  var ti = document.getElementById('note-title-input');
+  if (ti) ti.focus();
+}
+
+function cancelNote() {
+  document.getElementById('note-form').style.display = 'none';
+  noteCanvas = null; noteCtx = null;
+}
+
+function initNoteCanvas() {
+  noteCanvas = document.getElementById('note-canvas');
+  if (!noteCanvas) return;
+  noteCanvas.width = noteCanvas.offsetWidth || 700;
+  noteCanvas.height = 360;
+  noteCtx = noteCanvas.getContext('2d');
+  var isLight = document.body.classList.contains('light-theme');
+  noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
+  noteCtx.fillRect(0, 0, noteCanvas.width, noteCanvas.height);
+  noteHistory = [];
+
+  noteCanvas.addEventListener('pointerdown', notePointerDown);
+  noteCanvas.addEventListener('pointermove', notePointerMove);
+  noteCanvas.addEventListener('pointerup', notePointerUp);
+  noteCanvas.addEventListener('pointerout', notePointerUp);
+  noteCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
+  noteCanvas.addEventListener('touchmove',  function(e){ e.preventDefault(); }, { passive: false });
+
+  var sz = document.getElementById('note-stroke-size');
+  if (sz) sz.addEventListener('input', function(){ noteStrokeSize = parseInt(this.value); });
+}
+
+function getNotePos(e) {
+  var rect = noteCanvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (noteCanvas.width / rect.width),
+    y: (e.clientY - rect.top)  * (noteCanvas.height / rect.height)
+  };
+}
+
+function notePointerDown(e) {
+  if (e.pointerType === 'touch') return;
+  e.preventDefault();
+  noteCanvas.setPointerCapture(e.pointerId);
+  noteDrawing = true;
+  noteHistory.push(noteCtx.getImageData(0, 0, noteCanvas.width, noteCanvas.height));
+  if (noteHistory.length > 30) noteHistory.shift();
+  var p = getNotePos(e);
+  noteCtx.beginPath();
+  noteCtx.moveTo(p.x, p.y);
+}
+
+function notePointerMove(e) {
+  if (e.pointerType === 'touch' || !noteDrawing) return;
+  e.preventDefault();
+  var p = getNotePos(e);
+  var isLight = document.body.classList.contains('light-theme');
+  noteCtx.lineWidth   = noteTool === 'eraser' ? noteStrokeSize * 6 : noteStrokeSize;
+  noteCtx.strokeStyle = noteTool === 'eraser' ? (isLight ? '#f0ede8' : '#1a1a1a') : (isLight ? '#1a1a1a' : '#f0ede8');
+  noteCtx.lineCap  = 'round';
+  noteCtx.lineJoin = 'round';
+  noteCtx.lineTo(p.x, p.y);
+  noteCtx.stroke();
+  noteCtx.beginPath();
+  noteCtx.moveTo(p.x, p.y);
+}
+
+function notePointerUp(e) {
+  if (e && e.pointerType === 'touch') return;
+  noteDrawing = false;
+  if (noteCtx) noteCtx.beginPath();
+}
+
+function setNoteTool(tool) {
+  noteTool = tool;
+  var pen = document.getElementById('note-btn-pen');
+  var era = document.getElementById('note-btn-eraser');
+  if (pen) pen.classList.toggle('active', tool === 'pen');
+  if (era) era.classList.toggle('active', tool === 'eraser');
+}
+
+function clearNoteCanvas() {
+  if (!noteCtx) return;
+  noteHistory.push(noteCtx.getImageData(0, 0, noteCanvas.width, noteCanvas.height));
+  var isLight = document.body.classList.contains('light-theme');
+  noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
+  noteCtx.fillRect(0, 0, noteCanvas.width, noteCanvas.height);
+}
+
+function undoNoteCanvas() {
+  if (!noteCtx || !noteHistory.length) return;
+  noteCtx.putImageData(noteHistory.pop(), 0, 0);
+}
+
+function saveNote() {
+  var ti    = document.getElementById('note-title-input');
+  var title = ti ? ti.value.trim() : '';
+  if (!title) title = 'Untitled';
+  var drawing = noteCanvas ? noteCanvas.toDataURL('image/png') : null;
+  var notes = getNotes();
+  notes.unshift({
+    id: Date.now(),
+    title: title,
+    date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}),
+    drawing: drawing
+  });
+  if (notes.length > 100) notes = notes.slice(0, 100);
+  try { localStorage.setItem('app_notes', JSON.stringify(notes)); } catch(e) {}
+  cancelNote();
+  if (ti) ti.value = '';
+  buildNotesList();
+  showToast('Note saved');
+}
+
+function getNotes() {
+  try { return JSON.parse(localStorage.getItem('app_notes') || '[]'); } catch(e) { return []; }
+}
+
+function buildNotesList() {
+  var notes = getNotes();
+  var container = document.getElementById('notes-list');
+  if (!container) return;
+  if (!notes.length) {
+    container.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;padding:2rem 0;text-align:center">No notes yet. Tap New Note to start.</div>';
+    return;
+  }
+  container.innerHTML = notes.map(function(n) {
+    return '<div class="note-card" id="note-card-' + n.id + '">' +
+      '<div class="note-card-header" onclick="toggleNote(' + n.id + ')">' +
+        '<div class="note-card-title">' + n.title + '</div>' +
+        '<div class="note-card-date">' + n.date + '</div>' +
+        '<button class="pp-action-btn reset-btn" onclick="deleteNote(' + n.id + ');event.stopPropagation()">X</button>' +
+      '</div>' +
+      '<div class="note-card-body" id="note-body-' + n.id + '">' +
+        (n.drawing ? '<img class="note-card-img" src="' + n.drawing + '" alt="' + n.title + '">' : '<div style="color:var(--text-dim);font-size:0.72rem">No drawing.</div>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleNote(id) {
+  var b = document.getElementById('note-body-' + id);
+  if (b) b.classList.toggle('open');
+}
+
+function deleteNote(id) {
+  var notes = getNotes().filter(function(n) { return n.id !== id; });
+  try { localStorage.setItem('app_notes', JSON.stringify(notes)); } catch(e) {}
+  buildNotesList();
+}
+
+// ── SCORE GRAPH ───────────────────────────────────────────────────────────────
+var graphCurrentSubj = 'physics';
+
+function buildScoreGraph(subj) {
+  graphCurrentSubj = subj;
+  var data = getPPData();
+  // Collect completed scores for this subject in chronological order
+  var points = [];
+  var years = [2020,2021,2022,2023,2024];
+  years.forEach(function(y) {
+    [1,2,3].forEach(function(p) {
+      var key = 'pp_' + subj + '_' + y + '_' + p;
+      var e = data[key];
+      if (e && e.status === 'done' && e.score) {
+        // Parse score to percentage
+        var pct = parseScore(e.score);
+        if (pct !== null) {
+          points.push({ label: y + ' P' + p, pct: pct });
+        }
+      }
+    });
+  });
+
+  var subjCls = { physics:'phy', maths:'mat', biology:'bio' };
+  var subjColour = { physics:'var(--phy)', maths:'var(--mat)', biology:'var(--bio)' };
+  var tabs = ['physics','maths','biology'].map(function(s) {
+    var cls = subjCls[s];
+    return '<button class="score-graph-tab' + (s===subj?' active '+cls:'') + '" onclick="switchGraphSubj(\''+s+'\')">' +
+      (s==='physics'?'Physics':s==='maths'?'Maths':'Biology') + '</button>';
+  }).join('');
+
+  var canvasHTML = points.length < 2
+    ? '<div class="score-graph-empty">Complete at least 2 ' + (subj==='physics'?'Physics':subj==='maths'?'Maths':'Biology') + ' papers to see your score trend.</div>'
+    : '<div class="score-graph-canvas-wrap"><canvas class="score-graph-canvas" id="scoreGraphCanvas" width="600" height="200"></canvas></div>';
+
+  var html = '<div class="score-graph-wrap">' +
+    '<div class="score-graph-title">Score Trend</div>' +
+    '<div class="score-graph-tabs">' + tabs + '</div>' +
+    canvasHTML +
+    '</div>';
+
+  // Draw chart after render
+  if (points.length >= 2) {
+    setTimeout(function() { drawScoreGraph(points, subjColour[subj]); }, 50);
+  }
+  return html;
+}
+
+function switchGraphSubj(subj) {
+  ppCurrentSubj = subj;
+  buildPastPapersPage();
+}
+
+function parseScore(scoreStr) {
+  scoreStr = String(scoreStr).trim();
+  // Match "45/60" or "75%" or "75"
+  var fracMatch = scoreStr.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if (fracMatch) return Math.round((parseFloat(fracMatch[1]) / parseFloat(fracMatch[2])) * 100);
+  var pctMatch = scoreStr.match(/^(\d+(?:\.\d+)?)\s*%?$/);
+  if (pctMatch) { var v = parseFloat(pctMatch[1]); if (v >= 0 && v <= 100) return Math.round(v); }
+  return null;
+}
+
+function drawScoreGraph(points, colour) {
+  var canvas = document.getElementById('scoreGraphCanvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 600;
+  var W = canvas.width, H = canvas.height;
+  var ctx = canvas.getContext('2d');
+  var pad = { top: 20, right: 20, bottom: 40, left: 40 };
+  var gW = W - pad.left - pad.right;
+  var gH = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  var isDark = !document.body.classList.contains('light-theme');
+  var bgColour      = isDark ? '#1c1c1a' : '#ffffff';
+  var gridColour    = isDark ? '#333330' : '#e8e6e1';
+  var textColour    = isDark ? '#7a7770' : '#6b6860';
+  var labelColour   = isDark ? '#f0ede8' : '#1a1917';
+
+  ctx.fillStyle = bgColour;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines at 0, 25, 50, 75, 100
+  [0,25,50,75,100].forEach(function(pct) {
+    var y = pad.top + gH - (pct / 100) * gH;
+    ctx.beginPath();
+    ctx.strokeStyle = gridColour;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(pad.left + gW, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = textColour;
+    ctx.font = '10px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(pct + '%', pad.left - 6, y + 4);
+  });
+
+  // X axis labels
+  var step = gW / (points.length - 1);
+  points.forEach(function(pt, i) {
+    var x = pad.left + i * step;
+    ctx.fillStyle = textColour;
+    ctx.font = '10px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pt.label, x, H - 8);
+  });
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = colour;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  points.forEach(function(pt, i) {
+    var x = pad.left + i * step;
+    var y = pad.top + gH - (pt.pct / 100) * gH;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Fill area under line
+  ctx.beginPath();
+  points.forEach(function(pt, i) {
+    var x = pad.left + i * step;
+    var y = pad.top + gH - (pt.pct / 100) * gH;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad.left + (points.length-1)*step, pad.top + gH);
+  ctx.lineTo(pad.left, pad.top + gH);
+  ctx.closePath();
+  ctx.fillStyle = colour.replace('var(--phy)', 'rgba(96,165,250,0.12)')
+                        .replace('var(--mat)', 'rgba(251,146,60,0.12)')
+                        .replace('var(--bio)', 'rgba(74,222,128,0.12)');
+  ctx.fill();
+
+  // Dots + value labels
+  points.forEach(function(pt, i) {
+    var x = pad.left + i * step;
+    var y = pad.top + gH - (pt.pct / 100) * gH;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = colour;
+    ctx.fill();
+    ctx.fillStyle = labelColour;
+    ctx.font = 'bold 10px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pt.pct + '%', x, y - 9);
+  });
+}
+
+
+function markSlotMissed(ds, idx, subj, topic) {
+  // Reschedule the topic into the next available future slot
+  rescheduleMissedTopic(ds, idx, subj, topic);
+  saveTick(ds, idx, false);
+  // Rebuild calendar and refresh overlay so both reflect the change immediately
+  buildTimetable();
+  openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+  showToast('Rescheduled to next available slot');
+}
+
+// ── SWIPE BETWEEN TABS ────────────────────────────────────────────────────────
+var swipeStartX = 0;
+var swipeStartY = 0;
+var swipePages = ['timetable','tracker','countdown','pastpapers','notes','resources'];
+
+document.addEventListener('touchstart', function(e) {
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', function(e) {
+  var dx = e.changedTouches[0].clientX - swipeStartX;
+  var dy = e.changedTouches[0].clientY - swipeStartY;
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.8) return; // not a horizontal swipe
+  var activePage = document.querySelector('.page.active');
+  if (!activePage) return;
+  var currentId = activePage.id.replace('page-', '');
+  var idx = swipePages.indexOf(currentId);
+  if (idx === -1) return;
+  if (dx < 0 && idx < swipePages.length - 1) switchPage(swipePages[idx + 1]);
+  if (dx > 0 && idx > 0) switchPage(swipePages[idx - 1]);
+}, { passive: true });
+
+// ── TIMETABLE TOPIC SEARCH ────────────────────────────────────────────────────
+
+function searchTopics(query) {
+  var container = document.getElementById('ttSearchResults');
+  var q = query.trim().toLowerCase();
+  if (!q) { container.innerHTML = ''; return; }
+
+  // Read directly from the pre-computed schedule — no DOM scanning needed
+  var sched = getSchedule();
+  var start = new Date('2026-03-23');
+
+  var results = [];
+  var scheduledTopics = {}; // every real topic name that has a slot anywhere
+
+  sched.forEach(function(slot) {
+    if (!slot.topic || slot.isPastPaper || slot.missed) return;
+    // Track all scheduled real topic names (for the "not yet scheduled" check)
+    scheduledTopics[slot.topic] = true;
+    // Show every occurrence that matches the query
+    if (slot.topic.toLowerCase().indexOf(q) === -1) return;
+    // Compute week index and day-of-week
+    var parts = slot.date.split('-');
+    var day = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    var weekIdx = Math.floor((day - start) / (7*86400000));
+    results.push({
+      topic:   slot.topic,
+      subject: slot.subject,
+      rating:  slot.rating || 'red',
+      ds:      slot.date,
+      weekIdx: weekIdx,
+      day:     day,
+      dow:     day.getDay(),
+      time:    slot.time || ''
+    });
+  });
+
+  // Topics in the spec that have no slot at all in the schedule
+  var paperLabels = {
+    physics_p1:'Physics P1 (20 May)', physics_p2:'Physics P2 (1 Jun)', physics_p3:'Physics P3 (8 Jun)',
+    maths_p1:'Maths P1 (3 Jun)', maths_p2:'Maths P2 (11 Jun)', maths_p3:'Maths P3 (18 Jun)',
+    bio_p1:'Biology P1 (4 Jun)', bio_p2:'Biology P2 (12 Jun)', bio_p3:'Biology P3 (16 Jun)'
+  };
+  var unscheduled = [];
+  ['physics','maths','biology'].forEach(function(subj) {
+    SUBJECTS[subj].sections.forEach(function(sec) {
+      sec.topics.forEach(function(topic) {
+        if (topic.toLowerCase().indexOf(q) === -1) return;
+        if (scheduledTopics[topic]) return;
+        var paperKey = TOPIC_PAPER[topic];
+        unscheduled.push({ topic: topic, subject: subj, paperKey: paperKey, label: paperKey ? (paperLabels[paperKey] || paperKey) : '' });
+      });
+    });
+  });
+
+  container.innerHTML = '';
+
+  if (!results.length && !unscheduled.length) {
+    var msg = document.createElement('div');
+    msg.className = 'tt-search-no-results';
+    msg.textContent = 'No results found for "' + query + '"';
+    container.appendChild(msg);
+    return;
+  }
+
+  var dayNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var subjCls   = { physics:'phy', maths:'mat', biology:'bio' };
+  var subjLabel = { physics:'Physics', maths:'Maths', biology:'Biology' };
+
+  results.slice(0, 50).forEach(function(e) {
+    var dateLabel = dayNames[e.dow] + ' ' + e.day.getDate() + ' ' + monthNames[e.day.getMonth()];
+    var timeLabel = e.time ? ' · ' + e.time : '';
+    var cls = subjCls[e.subject] || 'phy';
+    var row = document.createElement('div');
+    row.className = 'tt-search-result-row';
+    var dot = document.createElement('div');
+    dot.className = 'tt-result-dot ' + (e.rating || 'red');
+    var topic = document.createElement('div');
+    topic.className = 'tt-result-topic';
+    topic.textContent = e.topic;
+    var meta = document.createElement('div');
+    meta.className = 'tt-result-meta';
+    var subj = document.createElement('span');
+    subj.className = 'tt-result-subj ' + cls;
+    subj.textContent = subjLabel[e.subject];
+    var date = document.createElement('span');
+    date.className = 'tt-result-date';
+    date.textContent = dateLabel + timeLabel;
+    var wk = document.createElement('span');
+    wk.className = 'tt-result-week';
+    wk.textContent = 'Wk ' + (e.weekIdx + 1);
+    meta.appendChild(subj); meta.appendChild(date); meta.appendChild(wk);
+    row.appendChild(dot); row.appendChild(topic); row.appendChild(meta);
+    (function(ds, wi) {
+      row.addEventListener('click', function() { searchResultClick(ds, wi); });
+    })(e.ds, e.weekIdx);
+    container.appendChild(row);
+  });
+
+  unscheduled.slice(0, 8).forEach(function(e) {
+    var cls = e.subject === 'physics' ? 'phy' : e.subject === 'maths' ? 'mat' : 'bio';
+    var label = e.subject === 'physics' ? 'Physics' : e.subject === 'maths' ? 'Maths' : 'Biology';
+    var row = document.createElement('div');
+    row.className = 'tt-search-result-row';
+    row.style.opacity = '0.55';
+    var dot = document.createElement('div');
+    dot.className = 'tt-result-dot';
+    dot.style.background = 'var(--text-dim)';
+    var topic = document.createElement('div');
+    topic.className = 'tt-result-topic';
+    topic.textContent = e.topic;
+    var meta = document.createElement('div');
+    meta.className = 'tt-result-meta';
+    var subj = document.createElement('span');
+    subj.className = 'tt-result-subj ' + cls;
+    subj.textContent = label;
+    var info = document.createElement('span');
+    info.className = 'tt-result-date';
+    info.textContent = (e.label || '') + ' — not yet scheduled';
+    meta.appendChild(subj); meta.appendChild(info);
+    row.appendChild(dot); row.appendChild(topic); row.appendChild(meta);
+    container.appendChild(row);
+  });
+}
+
+function searchResultClick(ds, weekIdx) {
+  // Clear search
+  document.getElementById('ttSearchInput').value = '';
+  document.getElementById('ttSearchResults').innerHTML = '';
+  // Switch to correct week
+  switchWeek(weekIdx);
+  // Open day overlay
+  openDayOverlay(ds, weekIdx);
+}
+
+
+buildNotesList();
+</script>
+</body>
+</html>

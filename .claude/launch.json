@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Static File Server",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "C:\\Users\\samue\\OneDrive\\Documents\\projects\\studyhelp\\.claude\\serve.bat"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}

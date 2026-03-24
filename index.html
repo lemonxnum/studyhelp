@@ -2212,11 +2212,12 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0;
+  background: #555;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -2225,18 +2226,20 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
   width: 100%;
   max-width: 900px;
   background: #fff;
-  border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
 }
 
 .pdf-page-canvas {
   display: block;
+  width: 100%;
+  height: auto;
 }
 
 .pdf-anno-canvas {
   position: absolute;
   top: 0; left: 0;
+  width: 100%;
+  height: 100%;
   touch-action: none;
   cursor: crosshair;
 }
@@ -4582,65 +4585,58 @@ function openPdfWorkspace(id) {
 
 function renderPdfPage(doc, pageNum, container, paper) {
   return doc.getPage(pageNum).then(function(page) {
-    // Step 1: get natural page size at scale=1
-    var natural = page.getViewport({ scale: 1 });
-
-    // Step 2: calculate CSS display size to fit the screen
     var dpr      = Math.min(window.devicePixelRatio || 1, 2);
-    var maxCssW  = Math.min(window.innerWidth - 32, 900);
-    var cssW     = Math.round(Math.min(maxCssW, natural.width));
-    var cssH     = Math.round(cssW * natural.height / natural.width);
+    var viewport = page.getViewport({ scale: 1.5 * dpr });
+    var natural  = page.getViewport({ scale: 1 });
 
-    // Step 3: render into a high-res buffer (dpr × css size)
-    var renderScale = (cssW / natural.width) * dpr;
-    var viewport    = page.getViewport({ scale: renderScale });
+    // Render into an offscreen canvas, then show as <img>.
+    // Using <img> means height:auto works correctly in all browsers/Safari.
+    var offscreen    = document.createElement('canvas');
+    offscreen.width  = Math.round(viewport.width);
+    offscreen.height = Math.round(viewport.height);
+    var offCtx = offscreen.getContext('2d');
 
-    var wrap = document.createElement('div');
-    wrap.className   = 'pdf-page-wrap';
-    wrap.style.width = cssW + 'px';
+    return page.render({ canvasContext: offCtx, viewport: viewport }).promise.then(function() {
+      var dataURL = offscreen.toDataURL('image/png');
 
-    // PDF canvas — buffer at dpr resolution, displayed at cssW×cssH
-    var pdfCanvas        = document.createElement('canvas');
-    pdfCanvas.className  = 'pdf-page-canvas';
-    pdfCanvas.width      = Math.round(viewport.width);
-    pdfCanvas.height     = Math.round(viewport.height);
-    pdfCanvas.style.display = 'block';
-    pdfCanvas.style.width   = cssW + 'px';
-    pdfCanvas.style.height  = cssH + 'px';
-    var pdfCtx = pdfCanvas.getContext('2d');
+      var wrap = document.createElement('div');
+      wrap.className = 'pdf-page-wrap';
 
-    // Annotation canvas — same CSS dimensions, same buffer size
-    var annoCanvas        = document.createElement('canvas');
-    annoCanvas.className  = 'pdf-anno-canvas';
-    annoCanvas.width      = Math.round(viewport.width);
-    annoCanvas.height     = Math.round(viewport.height);
-    annoCanvas.style.width  = cssW + 'px';
-    annoCanvas.style.height = cssH + 'px';
-    var annoCtx = annoCanvas.getContext('2d');
+      // <img> for the PDF content — height:auto always works on img
+      var img = document.createElement('img');
+      img.className = 'pdf-page-canvas';
+      img.src = dataURL;
+      img.style.display = 'block';
+      img.style.width    = '100%';
+      img.style.height   = 'auto';
 
-    // Page number label
-    var numLabel = document.createElement('div');
-    numLabel.className = 'pdf-page-num';
-    numLabel.textContent = pageNum + ' / ' + doc.numPages;
+      // Annotation canvas: same buffer size as the rendered PDF.
+      // Coords map via getBoundingClientRect so display size doesn't matter.
+      var annoCanvas       = document.createElement('canvas');
+      annoCanvas.className = 'pdf-anno-canvas';
+      annoCanvas.width     = offscreen.width;
+      annoCanvas.height    = offscreen.height;
+      var annoCtx = annoCanvas.getContext('2d');
 
-    wrap.appendChild(pdfCanvas);
-    wrap.appendChild(annoCanvas);
-    wrap.appendChild(numLabel);
-    container.appendChild(wrap);
+      var numLabel = document.createElement('div');
+      numLabel.className   = 'pdf-page-num';
+      numLabel.textContent = pageNum + ' / ' + doc.numPages;
 
-    var pgData = { pdfCanvas: pdfCanvas, annoCanvas: annoCanvas, annoCtx: annoCtx, history: [] };
-    pdfWsPages[pageNum - 1] = pgData;
+      wrap.appendChild(img);
+      wrap.appendChild(annoCanvas);
+      wrap.appendChild(numLabel);
+      container.appendChild(wrap);
 
-    // Drawing events on annotation canvas
-    annoCanvas.addEventListener('pointerdown', function(e) { pdfPointerDown(e, pgData); }, { passive: false });
-    annoCanvas.addEventListener('pointermove', function(e) { pdfPointerMove(e, pgData); }, { passive: false });
-    annoCanvas.addEventListener('pointerup', function(e) { pdfPointerUp(e, pgData); });
-    annoCanvas.addEventListener('pointerout', function(e) { pdfPointerUp(e, pgData); });
-    annoCanvas.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
-    annoCanvas.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+      var pgData = { pdfCanvas: img, annoCanvas: annoCanvas, annoCtx: annoCtx, history: [] };
+      pdfWsPages[pageNum - 1] = pgData;
 
-    // Render PDF page
-    return page.render({ canvasContext: pdfCtx, viewport: viewport }).promise;
+      annoCanvas.addEventListener('pointerdown', function(e) { pdfPointerDown(e, pgData); }, { passive: false });
+      annoCanvas.addEventListener('pointermove', function(e) { pdfPointerMove(e, pgData); }, { passive: false });
+      annoCanvas.addEventListener('pointerup',   function(e) { pdfPointerUp(e, pgData); });
+      annoCanvas.addEventListener('pointerout',  function(e) { pdfPointerUp(e, pgData); });
+      annoCanvas.addEventListener('touchstart',  function(e) { e.preventDefault(); }, { passive: false });
+      annoCanvas.addEventListener('touchmove',   function(e) { e.preventDefault(); }, { passive: false });
+    });
   });
 }
 

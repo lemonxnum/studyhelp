@@ -2645,12 +2645,12 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/></svg>
     </button>
     <div class="pdf-tool-sep"></div>
-    <button class="pdf-color-btn active" style="background:#f0ede8" data-color="#f0ede8" onclick="setPdfColor(this)" title="White"></button>
+    <button class="pdf-color-btn" style="background:#f0ede8" data-color="#f0ede8" onclick="setPdfColor(this)" title="White"></button>
     <button class="pdf-color-btn" style="background:#f87171" data-color="#f87171" onclick="setPdfColor(this)" title="Red"></button>
     <button class="pdf-color-btn" style="background:#60a5fa" data-color="#60a5fa" onclick="setPdfColor(this)" title="Blue"></button>
     <button class="pdf-color-btn" style="background:#4ade80" data-color="#4ade80" onclick="setPdfColor(this)" title="Green"></button>
     <button class="pdf-color-btn" style="background:#fbbf24" data-color="#fbbf24" onclick="setPdfColor(this)" title="Yellow"></button>
-    <button class="pdf-color-btn" style="background:#111110" data-color="#111110" onclick="setPdfColor(this)" title="Black"></button>
+    <button class="pdf-color-btn active" style="background:#111110" data-color="#111110" onclick="setPdfColor(this)" title="Black"></button>
     <div class="pdf-tool-sep"></div>
     <button class="pdf-size-btn active" data-size="2" onclick="setPdfSize(this)"><span class="pdf-size-dot" style="width:4px;height:4px"></span></button>
     <button class="pdf-size-btn" data-size="4" onclick="setPdfSize(this)"><span class="pdf-size-dot" style="width:7px;height:7px"></span></button>
@@ -4512,7 +4512,7 @@ var pdfWsDoc = null;     // pdfjsLib doc
 var pdfWsPages = [];     // { pdfCanvas, annoCanvas, annoCtx, history:[] }
 var pdfWsTimerInterval = null;
 var pdfWsTool = 'pen';
-var pdfWsColor = '#f0ede8';
+var pdfWsColor = '#111110';
 var pdfWsSize = 2;
 var pdfWsDrawing = false;
 var pdfWsLastPt = null;
@@ -4524,6 +4524,12 @@ function openPdfWorkspace(id) {
 
   pdfWsCurrent = id;
   pdfWsPages = [];
+
+  // Reset to black pen on every open
+  pdfWsColor = '#111110';
+  document.querySelectorAll('.pdf-color-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.color === '#111110');
+  });
 
   // Set title
   document.getElementById('pdfWsTitle').value = paper.title || '';
@@ -4631,8 +4637,10 @@ function renderPdfPage(doc, pageNum, container, paper) {
       annoCanvas.addEventListener('pointermove', function(e) { pdfPointerMove(e, pgData); }, { passive: false });
       annoCanvas.addEventListener('pointerup',   function(e) { pdfPointerUp(e, pgData); });
       annoCanvas.addEventListener('pointerout',  function(e) { pdfPointerUp(e, pgData); });
-      annoCanvas.addEventListener('touchstart',  function(e) { e.preventDefault(); }, { passive: false });
-      annoCanvas.addEventListener('touchmove',   function(e) { e.preventDefault(); }, { passive: false });
+      // Only block touch scroll when Apple Pencil is drawing; finger scrolls freely
+      annoCanvas.addEventListener('touchstart', function(e) {
+        if (pdfWsDrawing) e.preventDefault();
+      }, { passive: false });
     });
   });
 }
@@ -4647,6 +4655,7 @@ function getPdfCoords(e, canvas) {
 }
 
 function pdfPointerDown(e, pgData) {
+  if (e.pointerType !== 'pen') return; // Apple Pencil only
   e.preventDefault();
   pgData.annoCanvas.setPointerCapture(e.pointerId);
   pdfWsDrawing = true;
@@ -4681,7 +4690,7 @@ function pdfPointerDown(e, pgData) {
 }
 
 function pdfPointerMove(e, pgData) {
-  if (!pdfWsDrawing) return;
+  if (!pdfWsDrawing || e.pointerType !== 'pen') return;
   e.preventDefault();
   var pt = getPdfCoords(e, pgData.annoCanvas);
   var ctx = pgData.annoCtx;
@@ -4698,7 +4707,7 @@ function pdfPointerMove(e, pgData) {
 }
 
 function pdfPointerUp(e, pgData) {
-  if (!pdfWsDrawing) return;
+  if (!pdfWsDrawing || (e && e.pointerType !== 'pen')) return;
   pdfWsDrawing = false;
   var ctx = pgData.annoCtx;
   ctx.globalCompositeOperation = 'source-over';

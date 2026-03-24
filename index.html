@@ -3230,6 +3230,7 @@ function generateSchedule() {
 }
 
 let _schedule = null;
+let _ttWeek = 0; // tracks which week is currently visible in the timetable
 function getSchedule() {
   if (_schedule) return _schedule;
   try { const s = localStorage.getItem(SCHEDULE_KEY); if (s) { _schedule = JSON.parse(s); return _schedule; } } catch(e) {}
@@ -3249,17 +3250,16 @@ function getSlotsForDate(ds) {
 // have a carried-over slot. Multiple missed topics spread one per day.
 function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
   const sched = getSchedule();
+  const todayDs = dateStr(new Date());
 
   // Mark the current slot as missed
   const cur = sched.find(s => s.date === ds && s.slotIndex === slotIndex && s.subject === subj);
   if (cur) { cur.missed = true; cur.isPastPaper = false; }
 
-  // Find the next calendar day after ds that is not Saturday and not past the
-  // final exam, and that doesn't already have a carried-over slot for any subject.
-  const carriedDates = new Set(sched.filter(s => s.carriedOver).map(s => s.date));
+  // Find the next calendar day after ds that is not Saturday and not past the final exam.
   const startDate = new Date(ds + 'T00:00:00');
   let insertDate = null;
-  for (let i = 1; i <= 30; i++) {
+  for (let i = 1; i <= 60; i++) {
     const candidate = new Date(startDate);
     candidate.setDate(candidate.getDate() + i);
     const candidateDs = dateStr(candidate);
@@ -3267,10 +3267,8 @@ function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
     if (candidate.getDay() === 6) continue;           // skip Saturday
     if (candidateDs > '2026-06-18') break;            // past end of timetable
     if (SUBJECT_FINAL_EXAM[subj] && candidateDs >= SUBJECT_FINAL_EXAM[subj]) break; // past subject's final exam
-    if (!carriedDates.has(candidateDs)) {
-      insertDate = candidateDs;
-      break;
-    }
+    insertDate = candidateDs;
+    break;
   }
 
   if (insertDate) {
@@ -3585,9 +3583,13 @@ function buildTimetable() {
  panel.innerHTML = calHTML;
  panels.appendChild(panel);
  }
+ // Restore whichever week was visible before the rebuild
+ document.querySelectorAll('.week-panel').forEach((p,i) => p.classList.toggle('active', i===_ttWeek));
+ document.querySelectorAll('.wk-btn').forEach((b,i) => b.classList.toggle('active', i===_ttWeek));
 }
 
 function switchWeek(idx) {
+ _ttWeek = idx;
  document.querySelectorAll('.week-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
  document.querySelectorAll('.wk-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
  var pg = document.querySelector('.page.active'); if (pg) pg.scrollTo({top:0,behavior:'smooth'});

@@ -2113,26 +2113,6 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
 }
-.pp-add-title-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  align-items: center;
-}
-.pp-name-input {
-  flex: 1;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 0.6rem 0.9rem;
-  color: var(--text);
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.82rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.pp-name-input:focus { border-color: var(--phy); }
-.pp-name-input::placeholder { color: var(--text-dim); }
 .pp-subj-row { display: flex; gap: 0.4rem; margin-bottom: 0.75rem; }
 .pp-subj-btn {
   flex: 1;
@@ -4136,6 +4116,7 @@ function savePP(arr) {
 }
 
 var ppNewSubj = 'physics';
+var ppNewPaper = 1;
 var ppTimerInterval = null;
 var ppEditingId = null;
 
@@ -4187,13 +4168,15 @@ function buildPastPapersPage() {
   // Add paper form
   var addHTML =
     '<div class="pp-add-card">' +
-      '<div class="pp-add-title-row">' +
-        '<input class="pp-name-input" type="text" id="ppNameInput" placeholder="Paper name e.g. AQA Physics June 2023 P1">' +
-      '</div>' +
       '<div class="pp-subj-row">' +
         '<button class="pp-subj-btn' + (ppNewSubj==='physics' ? ' active-phy' : '') + '" onclick="ppSetSubj(\'physics\',this)">Physics</button>' +
         '<button class="pp-subj-btn' + (ppNewSubj==='maths'   ? ' active-mat' : '') + '" onclick="ppSetSubj(\'maths\',this)">Maths</button>' +
         '<button class="pp-subj-btn' + (ppNewSubj==='biology' ? ' active-bio' : '') + '" onclick="ppSetSubj(\'biology\',this)">Biology</button>' +
+      '</div>' +
+      '<div class="pp-subj-row">' +
+        '<button class="pp-subj-btn' + (ppNewPaper===1 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(1,this)">Paper 1</button>' +
+        '<button class="pp-subj-btn' + (ppNewPaper===2 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(2,this)">Paper 2</button>' +
+        '<button class="pp-subj-btn' + (ppNewPaper===3 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(3,this)">Paper 3</button>' +
       '</div>' +
       '<button class="pp-start-btn" onclick="ppAdd()">&#9654; Start Paper</button>' +
     '</div>';
@@ -4266,15 +4249,17 @@ function escH(s) { var d=document.createElement('div'); d.textContent=String(s||
 
 function ppSetSubj(s, btn) {
   ppNewSubj = s;
-  document.querySelectorAll('.pp-subj-btn').forEach(function(b) {
-    b.className = 'pp-subj-btn';
-  });
-  if (btn) btn.className = 'pp-subj-btn active-' + (s==='physics'?'phy':s==='maths'?'mat':'bio');
+  buildPastPapersPage();
+}
+
+function ppSetPaper(n, btn) {
+  ppNewPaper = n;
+  buildPastPapersPage();
 }
 
 function ppAdd() {
-  var title = (document.getElementById('ppNameInput').value || '').trim();
-  if (!title) { showToast('Enter a paper name first'); return; }
+  var subjLabel = ppNewSubj.charAt(0).toUpperCase() + ppNewSubj.slice(1);
+  var title = subjLabel + ' — Paper ' + ppNewPaper;
   var papers = getPP();
   var active = papers.find(function(p) { return p.status === 'inprogress'; });
   if (active) { showToast('Finish the current paper first'); return; }

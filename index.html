@@ -3258,6 +3258,7 @@ function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
     const candidate = new Date(startDate);
     candidate.setDate(candidate.getDate() + i);
     const candidateDs = dateStr(candidate);
+    if (candidateDs < todayDs) continue;              // never carry-over to a past date
     if (candidate.getDay() === 6) continue;           // skip Saturday
     if (candidateDs > '2026-06-18') break;            // past end of timetable
     if (SUBJECT_FINAL_EXAM[subj] && candidateDs >= SUBJECT_FINAL_EXAM[subj]) break; // past subject's final exam
@@ -3322,9 +3323,9 @@ function optimiseSchedule() {
   const reassign = { physics: [], maths: [], biology: [] };
   for (const s of sched) {
     const ticked     = loadTick(s.date, s.slotIndex);
-    const isPast     = s.date < todayDs;
+    const isPast     = s.date <= todayDs;
     const isCarry    = !!s.carriedOver;
-    const isFuturePP = s.date >= todayDs && s.isPastPaper;
+    const isFuturePP = s.date > todayDs && s.isPastPaper;
     if (isPast || ticked || isCarry || isFuturePP) keep.push({ ...s });
     else reassign[s.subject].push({ ...s });
   }

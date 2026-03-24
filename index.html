@@ -3250,7 +3250,7 @@ function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
 
   // Mark the current slot as missed
   const cur = sched.find(s => s.date === ds && s.slotIndex === slotIndex && s.subject === subj);
-  if (cur) { cur.topic = 'Missed — rescheduled'; cur.rating = 'red'; cur.missed = true; cur.isPastPaper = false; }
+  if (cur) { cur.missed = true; cur.isPastPaper = false; }
 
   // Find the next calendar day after ds that is not Saturday and not past the
   // final exam, and that doesn't already have a carried-over slot for any subject.

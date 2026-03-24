@@ -1030,7 +1030,20 @@ body {
 }
 
 .pp-stat-num.done-col { color: var(--green); }
-.pp-stat-num.inprog-col { color: var(--amber); }
+.pp-score-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.55rem 0.75rem;
+  margin-bottom: 0.6rem;
+  outline: none;
+}
+.pp-score-input:focus { border-color: var(--text-muted); }
 
 .pp-stat-lbl {
  font-size: 0.58rem;
@@ -1672,56 +1685,6 @@ body {
 .pp-time-display { font-size: 0.62rem; color: var(--text-muted); }
 
 
-/* PP Timer */
-.pp-timer-display {
-  font-family: 'DM Serif Display', serif;
-  font-size: 2.8rem;
-  font-weight: 400;
-  letter-spacing: 0.05em;
-  text-align: center;
-  padding: 1.2rem 0 0.8rem;
-  color: var(--text);
-  line-height: 1;
-}
-
-.pp-timer-controls {
-  display: flex;
-  gap: 0.6rem;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-}
-
-.pp-timer-btn {
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.55rem 1.4rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--border2);
-  background: var(--surface2);
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.03em;
-}
-
-.pp-timer-btn.start { border-color: var(--green); color: var(--green); background: var(--bio-bg); }
-.pp-timer-btn.start:hover { background: rgba(74,222,128,0.15); }
-.pp-timer-btn.pause { border-color: var(--amber); color: var(--amber); background: var(--mat-bg); }
-.pp-timer-btn.pause:hover { background: rgba(251,146,60,0.15); }
-.pp-timer-btn.finish { border-color: var(--phy); color: var(--phy); background: var(--phy-bg); }
-.pp-timer-btn.finish:hover { background: rgba(96,165,250,0.15); }
-.pp-timer-btn.reset-t { border-color: var(--border2); color: var(--text-muted); }
-.pp-timer-btn.reset-t:hover { border-color: var(--red); color: var(--red); }
-
-.pp-timer-status {
-  text-align: center;
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.8rem;
-}
 
 .pp-score-entry {
   display: none;
@@ -2054,57 +2017,6 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 }
 
 /* ── PAST PAPERS PAGE ── */
-.pp-active-card {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.25rem 1.25rem;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-.pp-active-name {
-  font-family: 'DM Serif Display', serif;
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-}
-.pp-active-subj-badge {
-  display: inline-block;
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.6rem;
-  border-radius: 99px;
-  border: 1px solid;
-  margin-bottom: 1rem;
-}
-.pp-active-timer {
-  font-family: 'DM Serif Display', serif;
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--text);
-  margin-bottom: 1rem;
-  line-height: 1;
-}
-.pp-active-timer.paused { color: var(--amber); }
-.pp-active-btns { display: flex; gap: 0.6rem; justify-content: center; }
-.pp-tbtn {
-  padding: 0.55rem 1.2rem;
-  border-radius: 99px;
-  border: 1px solid var(--border2);
-  background: var(--surface2);
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pp-tbtn:hover { border-color: var(--text); color: var(--text); }
-.pp-tbtn.pause { border-color: var(--amber); color: var(--amber); background: var(--mat-bg); }
-.pp-tbtn.finish { border-color: var(--phy); color: var(--phy); background: var(--phy-bg); }
-.pp-tbtn.resume { border-color: var(--green); color: var(--green); background: var(--bio-bg); }
 
 .pp-add-card {
   background: var(--surface);
@@ -4106,7 +4018,7 @@ function getPPEntry(subj, year, paper) {
 }
 
 // ── PAST PAPERS ───────────────────────────────────────────────────────────────
-// Paper: { id, title, subject, status, elapsed, startTime, paused, score, date }
+// Paper: { id, title, subject, score, date }
 
 function getPP() {
   try { return JSON.parse(localStorage.getItem('alevel_pp_v2') || '[]'); } catch(e) { return []; }
@@ -4115,9 +4027,8 @@ function savePP(arr) {
   try { localStorage.setItem('alevel_pp_v2', JSON.stringify(arr)); } catch(e) {}
 }
 
-var ppNewSubj = 'physics';
+var ppNewSubj  = 'physics';
 var ppNewPaper = 1;
-var ppTimerInterval = null;
 var ppEditingId = null;
 
 function buildPastPapersPage() {
@@ -4127,75 +4038,51 @@ function buildPastPapersPage() {
   var subjColour = { physics:'var(--phy)', maths:'var(--mat)', biology:'var(--bio)' };
   var subjShort  = { physics:'PHY', maths:'MAT', biology:'BIO' };
 
-  // Active paper (in progress)
-  var active = papers.find(function(p) { return p.status === 'inprogress'; });
-  var activeHTML = '';
-  if (active) {
-    var elapsed = active.elapsed || 0;
-    if (active.startTime && !active.paused) elapsed += Math.floor((Date.now() - active.startTime) / 1000);
-    var isPaused = active.paused;
-    activeHTML =
-      '<div class="pp-active-card">' +
-        '<div class="pp-active-name">' + escH(active.title || 'Untitled') + '</div>' +
-        '<div class="pp-active-subj-badge" style="border-color:' + subjColour[active.subject] + ';color:' + subjColour[active.subject] + '">' + subjShort[active.subject] + '</div>' +
-        '<div class="pp-active-timer' + (isPaused ? ' paused' : '') + '" id="ppLiveTimer">' + formatSeconds(elapsed) + '</div>' +
-        '<div class="pp-active-btns">' +
-          (isPaused
-            ? '<button class="pp-tbtn resume" onclick="ppResume(\'' + active.id + '\')">Resume</button>'
-            : '<button class="pp-tbtn pause" onclick="ppPause(\'' + active.id + '\')">Pause</button>') +
-          '<button class="pp-tbtn finish" onclick="ppFinish(\'' + active.id + '\')">Finish</button>' +
-        '</div>' +
-      '</div>';
-  }
-
-  // Stats for completed papers
-  var done = papers.filter(function(p) { return p.status === 'done'; });
-  var totalTime = done.reduce(function(s, p) { return s + (p.elapsed || 0); }, 0);
-  var scores = done.map(function(p) {
+  // Stats
+  var scores = papers.map(function(p) {
     if (!p.score) return null;
     var m = p.score.match(/(\d+)\s*\/\s*(\d+)/);
     return m ? Math.round(parseInt(m[1]) / parseInt(m[2]) * 100) : null;
   }).filter(function(x) { return x !== null; });
   var avgScore = scores.length ? Math.round(scores.reduce(function(a,b){return a+b;},0) / scores.length) : null;
 
-  var statsHTML = done.length ?
+  var statsHTML = papers.length ?
     '<div class="pp-stats-bar" style="margin-bottom:1.5rem">' +
-      '<div class="pp-stat"><span class="pp-stat-num done-col">' + done.length + '</span><span class="pp-stat-lbl">Done</span></div>' +
+      '<div class="pp-stat"><span class="pp-stat-num done-col">' + papers.length + '</span><span class="pp-stat-lbl">Done</span></div>' +
       (avgScore !== null ? '<div class="pp-stat"><span class="pp-stat-num done-col">' + avgScore + '%</span><span class="pp-stat-lbl">Avg Score</span></div>' : '') +
-      '<div class="pp-stat"><span class="pp-stat-num">' + formatSeconds(totalTime) + '</span><span class="pp-stat-lbl">Total Time</span></div>' +
     '</div>' : '';
 
-  // Add paper form
+  // Active colour class for paper buttons
+  var ac = ppNewSubj === 'physics' ? 'phy' : ppNewSubj === 'maths' ? 'mat' : 'bio';
+
+  // Log paper form
   var addHTML =
     '<div class="pp-add-card">' +
       '<div class="pp-subj-row">' +
-        '<button class="pp-subj-btn' + (ppNewSubj==='physics' ? ' active-phy' : '') + '" onclick="ppSetSubj(\'physics\',this)">Physics</button>' +
-        '<button class="pp-subj-btn' + (ppNewSubj==='maths'   ? ' active-mat' : '') + '" onclick="ppSetSubj(\'maths\',this)">Maths</button>' +
-        '<button class="pp-subj-btn' + (ppNewSubj==='biology' ? ' active-bio' : '') + '" onclick="ppSetSubj(\'biology\',this)">Biology</button>' +
+        '<button class="pp-subj-btn' + (ppNewSubj==='physics' ? ' active-phy' : '') + '" onclick="ppSetSubj(\'physics\')">Physics</button>' +
+        '<button class="pp-subj-btn' + (ppNewSubj==='maths'   ? ' active-mat' : '') + '" onclick="ppSetSubj(\'maths\')">Maths</button>' +
+        '<button class="pp-subj-btn' + (ppNewSubj==='biology' ? ' active-bio' : '') + '" onclick="ppSetSubj(\'biology\')">Biology</button>' +
       '</div>' +
       '<div class="pp-subj-row">' +
-        '<button class="pp-subj-btn' + (ppNewPaper===1 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(1,this)">Paper 1</button>' +
-        '<button class="pp-subj-btn' + (ppNewPaper===2 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(2,this)">Paper 2</button>' +
-        '<button class="pp-subj-btn' + (ppNewPaper===3 ? ' active-' + (ppNewSubj==='physics'?'phy':ppNewSubj==='maths'?'mat':'bio') : '') + '" onclick="ppSetPaper(3,this)">Paper 3</button>' +
+        '<button class="pp-subj-btn' + (ppNewPaper===1 ? ' active-'+ac : '') + '" onclick="ppSetPaper(1)">Paper 1</button>' +
+        '<button class="pp-subj-btn' + (ppNewPaper===2 ? ' active-'+ac : '') + '" onclick="ppSetPaper(2)">Paper 2</button>' +
+        '<button class="pp-subj-btn' + (ppNewPaper===3 ? ' active-'+ac : '') + '" onclick="ppSetPaper(3)">Paper 3</button>' +
       '</div>' +
-      '<button class="pp-start-btn" onclick="ppAdd()">&#9654; Start Paper</button>' +
+      '<input class="pp-score-input" id="ppNewScore" type="text" placeholder="Score  e.g. 78/100  (optional)">' +
+      '<button class="pp-start-btn" onclick="ppAdd()">Log Paper</button>' +
     '</div>';
 
   // Completed list
   var listHTML = '';
-  if (done.length) {
-    listHTML += '<div class="pp-list-header">' +
-      '<span class="pp-list-title">Completed Papers</span>' +
-      (avgScore !== null ? '<span class="pp-list-meta">avg ' + avgScore + '%</span>' : '') +
-      '</div>';
-    listHTML += done.map(function(p) {
+  if (papers.length) {
+    listHTML += '<div class="pp-list-header"><span class="pp-list-title">Completed Papers</span></div>';
+    listHTML += papers.map(function(p) {
       if (ppEditingId === p.id) {
         return '<div class="pp-edit-row" id="pp-edit-' + p.id + '">' +
-          '<input id="pp-edit-name-' + p.id + '" value="' + escH(p.title||'') + '" placeholder="Name" style="flex:2;min-width:120px">' +
-          '<input id="pp-edit-score-' + p.id + '" value="' + escH(p.score||'') + '" placeholder="Score e.g. 78/100" style="width:110px">' +
-          '<input id="pp-edit-time-' + p.id + '" value="' + (p.elapsed ? Math.round(p.elapsed/60) : '') + '" placeholder="Mins" type="number" style="width:70px">' +
+          '<input id="pp-edit-name-'  + p.id + '" value="' + escH(p.title||'') + '" placeholder="Name">' +
+          '<input id="pp-edit-score-' + p.id + '" value="' + escH(p.score||'') + '" placeholder="Score e.g. 78/100">' +
           '<button class="pp-edit-save" onclick="ppSaveEdit(\'' + p.id + '\')">Save</button>' +
-          '<button class="pp-row-btn" onclick="ppCancelEdit()">Cancel</button>' +
+          '<button class="pp-row-btn"  onclick="ppCancelEdit()">Cancel</button>' +
         '</div>';
       }
       var scoreNum = (function() {
@@ -4209,8 +4096,7 @@ function buildPastPapersPage() {
         '<div class="pp-row-info">' +
           '<div class="pp-row-name">' + escH(p.title || 'Untitled') + '</div>' +
           '<div class="pp-row-meta">' +
-            (p.score ? '<span style="color:' + scoreColour + ';font-weight:600">' + escH(p.score) + (scoreNum !== null ? ' · ' + scoreNum + '%' : '') + '</span>' : '') +
-            (p.elapsed ? '<span>' + formatSeconds(p.elapsed) + '</span>' : '') +
+            (p.score ? '<span style="color:' + scoreColour + ';font-weight:600">' + escH(p.score) + (scoreNum !== null ? ' (' + scoreNum + '%)' : '') + '</span>' : '<span style="color:var(--text-dim)">No score</span>') +
             (p.date ? '<span>' + p.date + '</span>' : '') +
           '</div>' +
         '</div>' +
@@ -4221,93 +4107,30 @@ function buildPastPapersPage() {
       '</div>';
     }).join('');
   } else {
-    listHTML = '<div class="pp-empty">No completed papers yet — start one above.</div>';
+    listHTML = '<div class="pp-empty">No papers logged yet — add one above.</div>';
   }
 
   container.innerHTML =
     '<div class="today-date-banner"><h2>Past <em>Papers</em></h2></div>' +
-    statsHTML +
-    activeHTML +
-    addHTML +
-    listHTML;
-
-  // Start live timer if active
-  if (ppTimerInterval) clearInterval(ppTimerInterval);
-  if (active && !active.paused) {
-    ppTimerInterval = setInterval(function() {
-      var p = getPP().find(function(x) { return x.status === 'inprogress'; });
-      if (!p) { clearInterval(ppTimerInterval); return; }
-      var el = document.getElementById('ppLiveTimer');
-      if (!el) { clearInterval(ppTimerInterval); return; }
-      var secs = (p.elapsed||0) + (p.startTime && !p.paused ? Math.floor((Date.now()-p.startTime)/1000) : 0);
-      el.textContent = formatSeconds(secs);
-    }, 1000);
-  }
+    statsHTML + addHTML + listHTML;
 }
 
 function escH(s) { var d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
 
-function ppSetSubj(s, btn) {
-  ppNewSubj = s;
-  buildPastPapersPage();
-}
-
-function ppSetPaper(n, btn) {
-  ppNewPaper = n;
-  buildPastPapersPage();
-}
+function ppSetSubj(s) { ppNewSubj = s; buildPastPapersPage(); }
+function ppSetPaper(n) { ppNewPaper = n; buildPastPapersPage(); }
 
 function ppAdd() {
   var subjLabel = ppNewSubj.charAt(0).toUpperCase() + ppNewSubj.slice(1);
   var title = subjLabel + ' — Paper ' + ppNewPaper;
-  var papers = getPP();
-  var active = papers.find(function(p) { return p.status === 'inprogress'; });
-  if (active) { showToast('Finish the current paper first'); return; }
+  var scoreEl = document.getElementById('ppNewScore');
+  var score = scoreEl ? scoreEl.value.trim() : '';
   var id = 'pp_' + Date.now();
-  papers.unshift({ id:id, title:title, subject:ppNewSubj, status:'inprogress', elapsed:0, startTime:Date.now(), paused:false, score:'', date:'' });
-  savePP(papers);
-  buildPastPapersPage();
-  showToast('Timer started');
-}
-
-function ppPause(id) {
   var papers = getPP();
-  var p = papers.find(function(x){return x.id===id;});
-  if (!p) return;
-  p.elapsed = (p.elapsed||0) + Math.floor((Date.now()-(p.startTime||Date.now()))/1000);
-  p.startTime = null;
-  p.paused = true;
+  papers.unshift({ id:id, title:title, subject:ppNewSubj, score:score, date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) });
   savePP(papers);
   buildPastPapersPage();
-}
-
-function ppResume(id) {
-  var papers = getPP();
-  var p = papers.find(function(x){return x.id===id;});
-  if (!p) return;
-  p.startTime = Date.now();
-  p.paused = false;
-  savePP(papers);
-  buildPastPapersPage();
-}
-
-function ppFinish(id) {
-  var papers = getPP();
-  var p = papers.find(function(x){return x.id===id;});
-  if (!p) return;
-  // Freeze elapsed
-  if (p.startTime && !p.paused) {
-    p.elapsed = (p.elapsed||0) + Math.floor((Date.now()-p.startTime)/1000);
-    p.startTime = null;
-  }
-  p.status = 'done';
-  p.date = new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
-  savePP(papers);
-  // Show score prompt via existing overlay
-  ppEditingId = id;
-  buildPastPapersPage();
-  ppOpenEdit(id);
-  showToast('Paper finished — add your score');
+  showToast('Paper logged');
 }
 
 function ppDelete(id) {
@@ -4319,15 +4142,11 @@ function ppDelete(id) {
 function ppOpenEdit(id) {
   ppEditingId = id;
   buildPastPapersPage();
-  // Scroll edit row into view
   var el = document.getElementById('pp-edit-' + id);
   if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
-function ppCancelEdit() {
-  ppEditingId = null;
-  buildPastPapersPage();
-}
+function ppCancelEdit() { ppEditingId = null; buildPastPapersPage(); }
 
 function ppSaveEdit(id) {
   var papers = getPP();
@@ -4335,21 +4154,12 @@ function ppSaveEdit(id) {
   if (!p) return;
   var nameEl  = document.getElementById('pp-edit-name-'  + id);
   var scoreEl = document.getElementById('pp-edit-score-' + id);
-  var timeEl  = document.getElementById('pp-edit-time-'  + id);
   if (nameEl  && nameEl.value.trim())  p.title = nameEl.value.trim();
   if (scoreEl) p.score = scoreEl.value.trim();
-  if (timeEl  && timeEl.value)         p.elapsed = parseInt(timeEl.value) * 60;
   savePP(papers);
   ppEditingId = null;
   buildPastPapersPage();
   showToast('Saved');
-}
-
-function formatSeconds(secs) {
-  secs = Math.max(0, Math.floor(secs));
-  var h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
-  if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
-  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
 
 function formatMins(mins) {

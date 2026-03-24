@@ -1829,6 +1829,8 @@ body {
 body.light-theme .note-canvas-wrap,
 body.light-theme #note-canvas { background: #f0ede8 !important; }
 
+#note-canvas { display: block; width: 100%; height: 460px; cursor: crosshair; touch-action: none; }
+
 
 /* ── NOTE TOOLBAR ── */
 .note-toolbar {
@@ -2471,7 +2473,7 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 <div class="today-wrap" style="max-width:900px">
   <div class="today-date-banner" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
     <h2>My <em>Notes</em></h2>
-    <button class="pp-timer-btn start" onclick="showNewNoteForm()">New Note</button>
+    <button class="pp-start-btn" style="width:auto;padding:0.55rem 1.4rem" onclick="showNewNoteForm()">+ New Note</button>
   </div>
 
   <!-- New note form -->
@@ -2514,7 +2516,7 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
           <canvas id="note-canvas" class="pq-canvas"></canvas>
         </div>
         <div class="pp-form-actions" style="margin-top:0.75rem">
-          <button class="pp-timer-btn start" onclick="saveNote()">Save Note</button>
+          <button class="pp-start-btn" style="width:auto;padding:0.55rem 1.4rem" onclick="saveNote()">Save Note</button>
           <button class="pp-action-btn reset-btn" onclick="cancelNote()">Cancel</button>
         </div>
       </div>
@@ -4485,23 +4487,29 @@ function cancelNote() {
 function initNoteCanvas() {
   noteCanvas = document.getElementById('note-canvas');
   if (!noteCanvas) return;
-  noteCanvas.width = noteCanvas.offsetWidth || 700;
-  noteCanvas.height = 360;
-  noteCtx = noteCanvas.getContext('2d');
-  var isLight = document.body.classList.contains('light-theme');
-  noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
-  noteCtx.fillRect(0, 0, noteCanvas.width, noteCanvas.height);
-  noteHistory = [];
 
-  noteCanvas.addEventListener('pointerdown', notePointerDown);
-  noteCanvas.addEventListener('pointermove', notePointerMove);
-  noteCanvas.addEventListener('pointerup', notePointerUp);
-  noteCanvas.addEventListener('pointerout', notePointerUp);
-  noteCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
-  noteCanvas.addEventListener('touchmove',  function(e){ e.preventDefault(); }, { passive: false });
+  // Use rAF to ensure layout is complete so offsetWidth is correct
+  requestAnimationFrame(function() {
+    var w = noteCanvas.offsetWidth || 700;
+    var h = 460;
+    noteCanvas.width  = w;
+    noteCanvas.height = h;
+    noteCtx = noteCanvas.getContext('2d');
+    var isLight = document.body.classList.contains('light-theme');
+    noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
+    noteCtx.fillRect(0, 0, w, h);
+    noteHistory = [];
 
-  var sz = document.getElementById('note-stroke-size');
-  if (sz) sz.addEventListener('input', function(){ noteStrokeSize = parseInt(this.value); });
+    noteCanvas.addEventListener('pointerdown', notePointerDown);
+    noteCanvas.addEventListener('pointermove', notePointerMove);
+    noteCanvas.addEventListener('pointerup',   notePointerUp);
+    noteCanvas.addEventListener('pointerout',  notePointerUp);
+    noteCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
+    noteCanvas.addEventListener('touchmove',  function(e){ e.preventDefault(); }, { passive: false });
+
+    var sz = document.getElementById('note-stroke-size');
+    if (sz) sz.addEventListener('input', function(){ noteStrokeSize = parseInt(this.value); });
+  });
 }
 
 function getNotePos(e) {
@@ -4802,14 +4810,16 @@ var swipeStartY = 0;
 var swipePages = ['timetable','tracker','countdown','pastpapers','notes','resources'];
 
 document.addEventListener('touchstart', function(e) {
+  if (e.touches[0].touchType === 'stylus') return; // ignore Apple Pencil
   swipeStartX = e.touches[0].clientX;
   swipeStartY = e.touches[0].clientY;
 }, { passive: true });
 
 document.addEventListener('touchend', function(e) {
+  if (e.changedTouches[0].touchType === 'stylus') return; // ignore Apple Pencil
   var dx = e.changedTouches[0].clientX - swipeStartX;
   var dy = e.changedTouches[0].clientY - swipeStartY;
-  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.8) return; // not a horizontal swipe
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
   var activePage = document.querySelector('.page.active');
   if (!activePage) return;
   var currentId = activePage.id.replace('page-', '');

@@ -413,6 +413,8 @@ body {
 
 .rev-slot.done { opacity: 0.45; border-left-color: var(--green) !important; }
 .rev-slot.done .rev-slot-topic { text-decoration: line-through; color: var(--text-muted); }
+.rev-slot.missed { opacity: 0.5; border-left-color: var(--amber) !important; }
+.rev-slot.missed .rev-slot-topic { color: var(--text-muted); }
 
 .rest-label {
  font-size: 0.6rem;
@@ -3554,7 +3556,7 @@ function buildTimetable() {
  const subCls = s.subject === 'biology' ? 'bio' : s.subject === 'maths' ? 'maths' : 'physics';
  const isDone = loadTick(ds, s.slotIndex);
  bodyHTML += `
- <div class="rev-slot ${subCls}${s.carriedOver ? ' carried-over' : ''}${isDone ? ' done' : ''}">
+ <div class="rev-slot ${subCls}${s.carriedOver ? ' carried-over' : ''}${isDone ? ' done' : ''}${s.missed ? ' missed' : ''}">
  <div class="rev-slot-dot ${s.rating}"></div>
  <div class="rev-slot-text">
  <div class="rev-slot-subj">${s.subject === 'biology' ? 'Bio' : s.subject === 'maths' ? 'Maths' : 'Physics'} · ${s.time}${s.missed ? ' ' : ''}${s.isPastPaper ? ' ' : ''}${s.carriedOver ? ' ↩ carried over' : ''}</div>
@@ -3750,8 +3752,9 @@ function overlayToggleTick(ds, idx, subj, topic, currentRating) {
  } else {
  saveTick(ds, idx, true);
  clearMissed(subj, topic);
+ optimiseSchedule(true);
  refreshOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
- // Prompt rating update — optimise runs inside submitModalRating
+ // Prompt rating update — optimise also runs inside submitModalRating to reorder with new rating
  modalPendingSubj = subj;
  modalPendingTopic = topic;
  document.getElementById('modalTopicText').innerHTML = `How confident do you feel about <strong>${topic}</strong> now?`;

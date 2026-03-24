@@ -839,7 +839,7 @@ body {
  position: fixed;
  inset: 0;
  background: rgba(0,0,0,0.7);
- z-index: 200;
+ z-index: 310;
  display: none;
  align-items: center;
  justify-content: center;
@@ -3752,7 +3752,7 @@ function openDayOverlay(ds, weekIdx) {
  ${!ticked && !s.isPastPaper ? `<div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);font-size:0.67rem;color:var(--text-muted);line-height:1.6"><span style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:0.3rem"> How to use this hour</span>${getRevisionAdvice(s.topic, s.rating, s.subject)}</div>` : ''}
  ${!ticked && s.isPastPaper ? `<div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:var(--surface2);border-radius:5px;border-left:2px solid var(--border2);font-size:0.67rem;color:var(--text-muted);line-height:1.6"><span style="font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);display:block;margin-bottom:0.3rem"> How to use this hour</span>Do a full past paper under <strong>timed, exam conditions</strong> — no notes. Then mark it strictly using the mark scheme. For every mark dropped, write a one-line note on <em>why</em> you lost it. Log your score in the Past Papers tab.</div>` : ''}
  </div>
- <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;flex-shrink:0"><button class="slot-done-btn${ticked?' slot-done-active':''}" onclick="overlayToggleTick('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}','${s.rating}')" id="ov-tick-btn-${i}" title="Done"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>${!ticked && !s.missed ? `<button class="slot-miss-btn" onclick="markSlotMissed('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}</div>
+ <div style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;flex-shrink:0"><button class="slot-done-btn${ticked?' slot-done-active':''}" onclick="overlayToggleTick('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}','${s.rating}')" id="ov-tick-btn-${i}" title="Done"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>${!ticked && !s.missed && !s.carriedOver ? `<button class="slot-miss-btn" onclick="markSlotMissed('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}${s.carriedOver && !ticked ? `<button class="slot-miss-btn" title="Move to different day" onclick="moveCarryOver('${ds}',${i},'${s.subject}','${s.topic.replace(/'/g,"\\'")}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>` : ''}</div>
  </div>
  </div>`;
  }).join('') : '';
@@ -4886,6 +4886,7 @@ function markSlotMissed(ds, idx, subj, topic) {
 
 function closeRescheduleModal() {
   document.getElementById('rescheduleModal').classList.remove('open');
+  document.getElementById('rescheduleModal').querySelector('h3').textContent = 'Reschedule missed slot';
   _pendingMissedSlot = null;
 }
 
@@ -4893,14 +4894,58 @@ function confirmReschedule() {
   if (!_pendingMissedSlot) return;
   var chosenDate = document.getElementById('rescheduleDate').value;
   if (!chosenDate) { showToast('Please pick a date'); return; }
-  var { ds, idx, subj, topic } = _pendingMissedSlot;
-  rescheduleMissedTopic(ds, idx, subj, topic, chosenDate);
-  saveTick(ds, idx, false);
-  optimiseSchedule(true);
-  closeRescheduleModal();
-  openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+  var { ds, idx, subj, topic, isMove } = _pendingMissedSlot;
   var d = new Date(chosenDate + 'T00:00:00');
-  showToast('Missed — catch-up added on ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
+  var label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  if (isMove) {
+    moveCarryOverSlot(ds, idx, subj, topic, chosenDate);
+    optimiseSchedule(true);
+    closeRescheduleModal();
+    openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+    showToast('Catch-up moved to ' + label);
+  } else {
+    rescheduleMissedTopic(ds, idx, subj, topic, chosenDate);
+    saveTick(ds, idx, false);
+    optimiseSchedule(true);
+    closeRescheduleModal();
+    openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
+    showToast('Missed — catch-up added on ' + label);
+  }
+}
+
+function moveCarryOver(ds, slotIndex, subj, topic) {
+  _pendingMissedSlot = { ds, idx: slotIndex, subj, topic, isMove: true };
+  document.getElementById('rescheduleTopicLabel').textContent = topic;
+  document.getElementById('rescheduleModal').querySelector('h3').textContent = 'Move catch-up slot';
+  var dateInput = document.getElementById('rescheduleDate');
+  var tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (tomorrow.getDay() === 6) tomorrow.setDate(tomorrow.getDate() + 1);
+  dateInput.min = dateStr(new Date());
+  dateInput.max = '2026-06-18';
+  dateInput.value = dateStr(tomorrow);
+  document.getElementById('rescheduleModal').classList.add('open');
+}
+
+function moveCarryOverSlot(ds, slotIndex, subj, topic, newDate) {
+  var sched = getSchedule();
+  // Remove the existing carry-over slot from its current date
+  var removeIdx = sched.findIndex(function(s) {
+    return s.date === ds && s.slotIndex === slotIndex && s.subject === subj && s.carriedOver;
+  });
+  if (removeIdx !== -1) sched.splice(removeIdx, 1);
+  // Insert at the new chosen date
+  var existingOnDay = sched.filter(function(s) { return s.date === newDate; });
+  var maxSlotIdx = existingOnDay.length ? Math.max.apply(null, existingOnDay.map(function(s) { return s.slotIndex; })) : -1;
+  sched.push({
+    date: newDate, slotIndex: maxSlotIdx + 1, subject: subj,
+    time: '', loc: 'Catch-up', topic: topic,
+    rating: (ratings[subj] && ratings[subj][topic]) || 'red',
+    isPastPaper: false, carriedOver: true,
+  });
+  sched.sort(function(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : a.slotIndex - b.slotIndex; });
+  _schedule = sched;
+  saveSchedule();
 }
 
 // ── SWIPE BETWEEN TABS ────────────────────────────────────────────────────────

@@ -100,22 +100,23 @@ body {
 
 /* PAGE */
 .pages-container {
-  position: relative;
-  overflow-x: hidden;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
 }
 .page {
   display: block;
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   transform: translateX(100%);
   opacity: 0;
   pointer-events: none;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s;
   will-change: transform, opacity;
-  min-height: 100vh;
 }
 .page.active {
-  position: relative;
   transform: translateX(0);
   opacity: 1;
   pointer-events: auto;
@@ -3581,7 +3582,7 @@ function buildTimetable() {
 function switchWeek(idx) {
  document.querySelectorAll('.week-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
  document.querySelectorAll('.wk-btn').forEach((b,i) => b.classList.toggle('active', i===idx));
- window.scrollTo({top:0,behavior:'smooth'});
+ var pg = document.querySelector('.page.active'); if (pg) pg.scrollTo({top:0,behavior:'smooth'});
 }
 
 // DAY DETAIL OVERLAY 
@@ -4421,6 +4422,7 @@ function switchPage(page, dir) {
  nextEl.style.transition = 'none';
  nextEl.classList.add(inClass);
  nextEl.classList.add('active');
+ nextEl.scrollTop = 0;
  // Force reflow
  nextEl.getBoundingClientRect();
  nextEl.style.transition = '';

@@ -3307,7 +3307,7 @@ function resetAndRegenerateSchedule() {
 // Priority 1: every topic covered at least once before its exam.
 // Priority 2: red topics get extra sessions, then amber, to fill remaining slots.
 // Past, ticked, carry-over, and future past-paper slots are preserved.
-function optimiseSchedule() {
+function optimiseSchedule(silent) {
   const todayDs  = dateStr(new Date());
   const sched    = getSchedule();
   const rOrder   = { red: 0, amber: 1, green: 2 };
@@ -3328,8 +3328,9 @@ function optimiseSchedule() {
     const ticked     = loadTick(s.date, s.slotIndex);
     const isPast     = s.date <= todayDs;
     const isCarry    = !!s.carriedOver;
+    const isMissed   = !!s.missed;
     const isFuturePP = s.date > todayDs && s.isPastPaper;
-    if (isPast || ticked || isCarry || isFuturePP) keep.push({ ...s });
+    if (isPast || ticked || isCarry || isMissed || isFuturePP) keep.push({ ...s });
     else reassign[s.subject].push({ ...s });
   }
 
@@ -3411,7 +3412,7 @@ function optimiseSchedule() {
   saveSchedule();
   buildTimetable();
   buildTracker();
-  showToast('Schedule optimised');
+  if (!silent) showToast('Schedule optimised');
 }
 
 // getDayData: reads from pre-computed schedule (replaces buildDaySlots)
@@ -3744,12 +3745,13 @@ function overlayToggleTick(ds, idx, subj, topic, currentRating) {
  const wasTicked = loadTick(ds, idx);
  if (wasTicked) {
  saveTick(ds, idx, false);
+ optimiseSchedule(true);
  refreshOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
  } else {
  saveTick(ds, idx, true);
  clearMissed(subj, topic);
  refreshOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
- // Prompt rating update
+ // Prompt rating update — optimise runs inside submitModalRating
  modalPendingSubj = subj;
  modalPendingTopic = topic;
  document.getElementById('modalTopicText').innerHTML = `How confident do you feel about <strong>${topic}</strong> now?`;
@@ -3907,10 +3909,9 @@ function submitModalRating(newRating) {
  if (!ratings[modalPendingSubj]) ratings[modalPendingSubj] = {};
  ratings[modalPendingSubj][modalPendingTopic] = newRating;
  saveRatings();
- buildTimetable();
+ optimiseSchedule(true);
  updateTLStats();
- buildTracker();
- showToast('Rating updated — press Optimise to reschedule');
+ showToast('Rating updated — timetable adjusted');
  }
  closeModal();
  }
@@ -4835,10 +4836,10 @@ function markSlotMissed(ds, idx, subj, topic) {
   // Reschedule the topic into the next available future slot
   rescheduleMissedTopic(ds, idx, subj, topic);
   saveTick(ds, idx, false);
-  // Rebuild calendar and refresh overlay so both reflect the change immediately
-  buildTimetable();
+  // Optimise future slots then refresh overlay
+  optimiseSchedule(true);
   openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
-  showToast('Rescheduled to next available slot');
+  showToast('Missed — rescheduled and timetable updated');
 }
 
 // ── SWIPE BETWEEN TABS ────────────────────────────────────────────────────────

@@ -2226,20 +2226,18 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
   width: 100%;
   max-width: 900px;
   background: #fff;
-  overflow: hidden;
+  /* height is set via padding-bottom in JS to lock the aspect ratio */
 }
 
-.pdf-page-canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
+.pdf-page-canvas,
 .pdf-anno-canvas {
   position: absolute;
   top: 0; left: 0;
   width: 100%;
   height: 100%;
+}
+
+.pdf-anno-canvas {
   touch-action: none;
   cursor: crosshair;
 }
@@ -4587,7 +4585,6 @@ function renderPdfPage(doc, pageNum, container, paper) {
   return doc.getPage(pageNum).then(function(page) {
     var dpr      = Math.min(window.devicePixelRatio || 1, 2);
     var viewport = page.getViewport({ scale: 1.5 * dpr });
-    var natural  = page.getViewport({ scale: 1 });
 
     // Render into an offscreen canvas, then show as <img>.
     // Using <img> means height:auto works correctly in all browsers/Safari.
@@ -4601,14 +4598,14 @@ function renderPdfPage(doc, pageNum, container, paper) {
 
       var wrap = document.createElement('div');
       wrap.className = 'pdf-page-wrap';
+      // Lock height via padding-bottom (aspect-ratio box trick — never collapses)
+      var natural = page.getViewport({ scale: 1 });
+      wrap.style.paddingBottom = (natural.height / natural.width * 100).toFixed(6) + '%';
 
-      // <img> for the PDF content — height:auto always works on img
+      // <img> fills the aspect-ratio box with position:absolute (set in CSS)
       var img = document.createElement('img');
       img.className = 'pdf-page-canvas';
       img.src = dataURL;
-      img.style.display = 'block';
-      img.style.width    = '100%';
-      img.style.height   = 'auto';
 
       // Annotation canvas: same buffer size as the rendered PDF.
       // Coords map via getBoundingClientRect so display size doesn't matter.

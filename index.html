@@ -3375,6 +3375,14 @@ function optimiseSchedule(silent) {
     return queue;
   }
 
+  // Build map of most recent date each topic appears in keep slots (to enforce spacing)
+  const lastScheduled = {};
+  for (const s of keep) {
+    if (!s.topic || s.isPastPaper || s.missed) continue;
+    if (!lastScheduled[s.topic] || s.date > lastScheduled[s.topic])
+      lastScheduled[s.topic] = s.date;
+  }
+
   // Assign topics to future slots
   const newSlots = [];
   for (const subj of ['physics','maths','biology']) {
@@ -3394,12 +3402,17 @@ function optimiseSchedule(silent) {
         const t   = queue[idx];
         const pk  = TOPIC_PAPER[t];
         const ed  = pk ? EXAM_DATES[pk] : null;
-        if (!ed || frame.date < ed) {
-          ptr = (idx + 1) % queue.length;
-          newSlots.push({ ...frame, topic: t, rating: (ratings[subj]&&ratings[subj][t])||'red', isPastPaper: false });
-          assigned = true;
-          break;
+        if (ed && frame.date >= ed) continue; // past exam deadline
+        // Enforce minimum 21-day gap between sessions on the same topic
+        if (lastScheduled[t]) {
+          const gap = Math.round((new Date(frame.date) - new Date(lastScheduled[t])) / 86400000);
+          if (gap < 21) continue;
         }
+        ptr = (idx + 1) % queue.length;
+        newSlots.push({ ...frame, topic: t, rating: (ratings[subj]&&ratings[subj][t])||'red', isPastPaper: false });
+        lastScheduled[t] = frame.date;
+        assigned = true;
+        break;
       }
       if (!assigned)
         newSlots.push({ ...frame, topic: ppLabels[subj], rating: 'green', isPastPaper: true });

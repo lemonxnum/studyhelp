@@ -3907,12 +3907,10 @@ function submitModalRating(newRating) {
  if (!ratings[modalPendingSubj]) ratings[modalPendingSubj] = {};
  ratings[modalPendingSubj][modalPendingTopic] = newRating;
  saveRatings();
- // Regenerate schedule so traffic-light ordering reflects the new rating
- resetAndRegenerateSchedule();
  buildTimetable();
  updateTLStats();
- showToast('Rating updated to ' + newRating + ' ');
  buildTracker();
+ showToast('Rating updated — press Optimise to reschedule');
  }
  closeModal();
  }

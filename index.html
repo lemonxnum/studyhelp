@@ -2238,7 +2238,7 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 }
 
 .pdf-anno-canvas {
-  touch-action: none;
+  touch-action: pan-x pan-y; /* finger scrolls; pencil uses pointer events */
   cursor: crosshair;
 }
 
@@ -4657,6 +4657,7 @@ function getPdfCoords(e, canvas) {
 function pdfPointerDown(e, pgData) {
   if (e.pointerType !== 'pen') return; // Apple Pencil only
   e.preventDefault();
+  pgData.annoCanvas.style.touchAction = 'none'; // lock scroll while drawing
   pgData.annoCanvas.setPointerCapture(e.pointerId);
   pdfWsDrawing = true;
   // Save undo state
@@ -4709,6 +4710,7 @@ function pdfPointerMove(e, pgData) {
 function pdfPointerUp(e, pgData) {
   if (!pdfWsDrawing || (e && e.pointerType !== 'pen')) return;
   pdfWsDrawing = false;
+  pgData.annoCanvas.style.touchAction = ''; // restore finger scroll
   var ctx = pgData.annoCtx;
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;

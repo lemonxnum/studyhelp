@@ -412,7 +412,6 @@ body {
 .rev-slot-time { font-size: 0.52rem; color: var(--text-dim); margin-top: 0.1rem; }
 
 .rev-slot.done { opacity: 0.45; border-left-color: var(--green) !important; }
-.rev-slot.done .rev-slot-dot { background: var(--green) !important; }
 .rev-slot.done .rev-slot-topic { text-decoration: line-through; color: var(--text-muted); }
 
 .rest-label {
@@ -3555,7 +3554,7 @@ function buildTimetable() {
  const isDone = loadTick(ds, s.slotIndex);
  bodyHTML += `
  <div class="rev-slot ${subCls}${s.carriedOver ? ' carried-over' : ''}${isDone ? ' done' : ''}">
- <div class="rev-slot-dot ${s.carriedOver ? 'red' : s.rating}"></div>
+ <div class="rev-slot-dot ${s.rating}"></div>
  <div class="rev-slot-text">
  <div class="rev-slot-subj">${s.subject === 'biology' ? 'Bio' : s.subject === 'maths' ? 'Maths' : 'Physics'} · ${s.time}${s.missed ? ' ' : ''}${s.isPastPaper ? ' ' : ''}${s.carriedOver ? ' ↩ carried over' : ''}</div>
  <div class="rev-slot-topic" style="${s.isPastPaper ? 'font-style:italic;' : ''}${s.carriedOver ? 'color:var(--red);' : ''}">${s.topic}</div>

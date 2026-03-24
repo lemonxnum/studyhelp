@@ -2585,6 +2585,20 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 
 
 <!-- Rating prompt modal -->
+<!-- Reschedule date picker -->
+<div class="modal-overlay" id="rescheduleModal">
+ <div class="modal-box" style="max-width:320px">
+  <h3>Reschedule missed slot</h3>
+  <div class="modal-topic" id="rescheduleTopicLabel"></div>
+  <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:1rem">Pick the day you want to catch this up:</div>
+  <input type="date" id="rescheduleDate" style="width:100%;padding:0.65rem 0.85rem;background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;box-sizing:border-box;color-scheme:dark">
+  <div style="display:flex;gap:0.75rem">
+   <button class="pp-start-btn" style="flex:1" onclick="confirmReschedule()">Reschedule</button>
+   <button class="pp-start-btn" style="flex:1;background:var(--surface3);color:var(--text)" onclick="closeRescheduleModal()">Cancel</button>
+  </div>
+ </div>
+</div>
+
 <div class="modal-overlay" id="ratingModal">
  <div class="modal-box">
  <h3>How did it go?</h3>
@@ -3248,7 +3262,7 @@ function getSlotsForDate(ds) {
 // When a slot is marked missed, mark it as missed in the schedule and insert
 // the topic as an extra slot on the next available day that doesn't already
 // have a carried-over slot. Multiple missed topics spread one per day.
-function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
+function rescheduleMissedTopic(ds, slotIndex, subj, topic, targetDate) {
   const sched = getSchedule();
   const todayDs = dateStr(new Date());
 
@@ -3256,19 +3270,21 @@ function rescheduleMissedTopic(ds, slotIndex, subj, topic) {
   const cur = sched.find(s => s.date === ds && s.slotIndex === slotIndex && s.subject === subj);
   if (cur) { cur.missed = true; cur.isPastPaper = false; }
 
-  // Find the next calendar day after ds that is not Saturday and not past the final exam.
-  const startDate = new Date(ds + 'T00:00:00');
-  let insertDate = null;
-  for (let i = 1; i <= 60; i++) {
-    const candidate = new Date(startDate);
-    candidate.setDate(candidate.getDate() + i);
-    const candidateDs = dateStr(candidate);
-    if (candidateDs < todayDs) continue;              // never carry-over to a past date
-    if (candidate.getDay() === 6) continue;           // skip Saturday
-    if (candidateDs > '2026-06-18') break;            // past end of timetable
-    if (SUBJECT_FINAL_EXAM[subj] && candidateDs >= SUBJECT_FINAL_EXAM[subj]) break; // past subject's final exam
-    insertDate = candidateDs;
-    break;
+  // Use the user-chosen date if provided, otherwise auto-find next available day
+  let insertDate = targetDate || null;
+  if (!insertDate) {
+    const startDate = new Date(ds + 'T00:00:00');
+    for (let i = 1; i <= 60; i++) {
+      const candidate = new Date(startDate);
+      candidate.setDate(candidate.getDate() + i);
+      const candidateDs = dateStr(candidate);
+      if (candidateDs < todayDs) continue;
+      if (candidate.getDay() === 6) continue;
+      if (candidateDs > '2026-06-18') break;
+      if (SUBJECT_FINAL_EXAM[subj] && candidateDs >= SUBJECT_FINAL_EXAM[subj]) break;
+      insertDate = candidateDs;
+      break;
+    }
   }
 
   if (insertDate) {
@@ -4850,14 +4866,41 @@ function drawScoreGraph(points, colour) {
 }
 
 
+var _pendingMissedSlot = null;
+
 function markSlotMissed(ds, idx, subj, topic) {
-  // Reschedule the topic into the next available future slot
-  rescheduleMissedTopic(ds, idx, subj, topic);
+  // Open the reschedule date picker instead of auto-scheduling
+  _pendingMissedSlot = { ds, idx, subj, topic };
+  var label = document.getElementById('rescheduleTopicLabel');
+  if (label) label.textContent = topic;
+  var dateInput = document.getElementById('rescheduleDate');
+  var tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Skip Saturday for the default suggestion
+  if (tomorrow.getDay() === 6) tomorrow.setDate(tomorrow.getDate() + 1);
+  dateInput.min = dateStr(new Date()); // allow today onwards
+  dateInput.max = '2026-06-18';
+  dateInput.value = dateStr(tomorrow);
+  document.getElementById('rescheduleModal').classList.add('open');
+}
+
+function closeRescheduleModal() {
+  document.getElementById('rescheduleModal').classList.remove('open');
+  _pendingMissedSlot = null;
+}
+
+function confirmReschedule() {
+  if (!_pendingMissedSlot) return;
+  var chosenDate = document.getElementById('rescheduleDate').value;
+  if (!chosenDate) { showToast('Please pick a date'); return; }
+  var { ds, idx, subj, topic } = _pendingMissedSlot;
+  rescheduleMissedTopic(ds, idx, subj, topic, chosenDate);
   saveTick(ds, idx, false);
-  // Optimise future slots then refresh overlay
   optimiseSchedule(true);
+  closeRescheduleModal();
   openDayOverlay(ds, parseInt(document.getElementById('dayOverlay').dataset.weekIdx));
-  showToast('Missed — rescheduled and timetable updated');
+  var d = new Date(chosenDate + 'T00:00:00');
+  showToast('Missed — catch-up added on ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
 }
 
 // ── SWIPE BETWEEN TABS ────────────────────────────────────────────────────────

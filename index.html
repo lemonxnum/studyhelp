@@ -101,7 +101,7 @@ body {
 /* PAGE */
 .pages-container {
   position: fixed;
-  top: env(safe-area-inset-top); left: 0; right: 0; bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   overflow: hidden;
 }
 .page {
@@ -1856,6 +1856,7 @@ body.light-theme #note-overlay { background: #f0ede8; }
   background: var(--surface2);
   border-bottom: 1px solid var(--border);
   z-index: 2;
+  padding-top: env(safe-area-inset-top);
 }
 .note-fs-row {
   display: flex;

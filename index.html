@@ -4102,6 +4102,7 @@ function savePP(arr) {
 
 var ppNewSubj  = 'physics';
 var ppNewPaper = 1;
+var ppNewYear  = 2024;
 var ppEditingId = null;
 
 function buildPastPapersPage() {
@@ -4140,6 +4141,11 @@ function buildPastPapersPage() {
         '<button class="pp-subj-btn' + (ppNewPaper===1 ? ' active-'+ac : '') + '" onclick="ppSetPaper(1)">Paper 1</button>' +
         '<button class="pp-subj-btn' + (ppNewPaper===2 ? ' active-'+ac : '') + '" onclick="ppSetPaper(2)">Paper 2</button>' +
         '<button class="pp-subj-btn' + (ppNewPaper===3 ? ' active-'+ac : '') + '" onclick="ppSetPaper(3)">Paper 3</button>' +
+      '</div>' +
+      '<div class="pp-subj-row" style="flex-wrap:wrap;gap:0.4rem">' +
+        [2017,2018,2019,2020,2021,2022,2023,2024].map(function(y){
+          return '<button class="pp-subj-btn' + (ppNewYear===y ? ' active-'+ac : '') + '" onclick="ppSetYear('+y+')">' + y + '</button>';
+        }).join('') +
       '</div>' +
       '<input class="pp-score-input" id="ppNewScore" type="text" placeholder="Score  e.g. 78/100  (optional)">' +
       '<button class="pp-start-btn" onclick="ppAdd()">Log Paper</button>' +
@@ -4192,10 +4198,11 @@ function escH(s) { var d=document.createElement('div'); d.textContent=String(s||
 
 function ppSetSubj(s) { ppNewSubj = s; buildPastPapersPage(); }
 function ppSetPaper(n) { ppNewPaper = n; buildPastPapersPage(); }
+function ppSetYear(y)  { ppNewYear  = y; buildPastPapersPage(); }
 
 function ppAdd() {
   var subjLabel = ppNewSubj.charAt(0).toUpperCase() + ppNewSubj.slice(1);
-  var title = subjLabel + ' — Paper ' + ppNewPaper;
+  var title = subjLabel + ' — ' + ppNewYear + ' Paper ' + ppNewPaper;
   var scoreEl = document.getElementById('ppNewScore');
   var score = scoreEl ? scoreEl.value.trim() : '';
   var id = 'pp_' + Date.now();

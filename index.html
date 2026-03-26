@@ -1880,7 +1880,15 @@ body.light-theme #note-overlay { background: #f0ede8; }
   position: relative;
   overflow: hidden;
   touch-action: none;
+  background-color: #1a1a1a;
+  background-image:
+    linear-gradient(var(--note-grid-bold) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--note-grid-bold) 1.5px, transparent 1.5px),
+    linear-gradient(var(--note-grid-fine) 0.5px, transparent 0.5px),
+    linear-gradient(90deg, var(--note-grid-fine) 0.5px, transparent 0.5px);
+  background-size: 100px 100px, 100px 100px, 25px 25px, 25px 25px;
 }
+body.light-theme #note-fs-viewport { background-color: #f0ede8; }
 #note-fs-wrapper {
   position: absolute;
   top: 0; left: 0;
@@ -4613,6 +4621,7 @@ function calTouchCancel() {
 var noteCanvas = null, noteCtx = null, noteDrawing = false;
 var noteTool = 'pen', noteHistory = [], noteStrokeSize = 2;
 var notePanX = 0, notePanY = 0, noteZoom = 1;
+var _noteLastX = 0, _noteLastY = 0;
 var notePanActive = false, notePanStart = null;
 var notePinchActive = false, notePinchStartDist = 0;
 var notePinchStartZoom = 1, notePinchMidScreen = null, notePinchStartPan = null;
@@ -4648,6 +4657,13 @@ function cancelNote() {
 function applyNoteTransform() {
   document.getElementById('note-fs-wrapper').style.transform =
     'matrix(' + noteZoom + ',0,0,' + noteZoom + ',' + notePanX + ',' + notePanY + ')';
+  // Keep viewport background grid aligned with canvas pan/zoom
+  var vp = document.getElementById('note-fs-viewport');
+  var fine = 25 * noteZoom, bold = 100 * noteZoom;
+  var ox = notePanX % bold, oy = notePanY % bold;
+  var fox = notePanX % fine, foy = notePanY % fine;
+  vp.style.backgroundSize = bold+'px '+bold+'px, '+bold+'px '+bold+'px, '+fine+'px '+fine+'px, '+fine+'px '+fine+'px';
+  vp.style.backgroundPosition = ox+'px '+oy+'px, '+ox+'px '+oy+'px, '+fox+'px '+foy+'px, '+fox+'px '+foy+'px';
 }
 
 function attachNoteEvents() {
@@ -4680,8 +4696,9 @@ function notePointerDown(e) {
   noteCanvas.setPointerCapture(e.pointerId);
   noteDrawing = true;
   noteHistory.push(noteCtx.getImageData(0, 0, NOTE_W, NOTE_H));
-  if (noteHistory.length > 30) noteHistory.shift();
+  if (noteHistory.length > 20) noteHistory.shift();
   var p = getNotePos(e);
+  _noteLastX = p.x; _noteLastY = p.y;
   noteCtx.beginPath();
   noteCtx.moveTo(p.x, p.y);
 }
@@ -4691,21 +4708,29 @@ function notePointerMove(e) {
   e.preventDefault();
   var p = getNotePos(e);
   var isLight = document.body.classList.contains('light-theme');
+  noteCtx.lineCap  = 'round';
+  noteCtx.lineJoin = 'round';
   if (noteTool === 'eraser') {
     noteCtx.globalCompositeOperation = 'destination-out';
     noteCtx.lineWidth = noteStrokeSize * 8;
     noteCtx.strokeStyle = 'rgba(0,0,0,1)';
+    noteCtx.lineTo(p.x, p.y);
+    noteCtx.stroke();
+    noteCtx.beginPath();
+    noteCtx.moveTo(p.x, p.y);
   } else {
     noteCtx.globalCompositeOperation = 'source-over';
     noteCtx.lineWidth = noteStrokeSize;
     noteCtx.strokeStyle = isLight ? '#111110' : '#f0ede8';
+    // Quadratic Bézier through midpoints for smooth strokes
+    var midX = (_noteLastX + p.x) / 2;
+    var midY = (_noteLastY + p.y) / 2;
+    noteCtx.quadraticCurveTo(_noteLastX, _noteLastY, midX, midY);
+    noteCtx.stroke();
+    noteCtx.beginPath();
+    noteCtx.moveTo(midX, midY);
+    _noteLastX = p.x; _noteLastY = p.y;
   }
-  noteCtx.lineCap  = 'round';
-  noteCtx.lineJoin = 'round';
-  noteCtx.lineTo(p.x, p.y);
-  noteCtx.stroke();
-  noteCtx.beginPath();
-  noteCtx.moveTo(p.x, p.y);
 }
 
 function notePointerUp(e) {
@@ -4715,6 +4740,8 @@ function notePointerUp(e) {
 }
 
 function noteTouchStart(e) {
+  // Ignore Apple Pencil — it handles drawing via pointer events
+  if (e.touches[0] && e.touches[0].touchType === 'stylus') return;
   e.preventDefault();
   if (e.touches.length === 1) {
     notePanActive = true; notePinchActive = false;
@@ -4731,6 +4758,7 @@ function noteTouchStart(e) {
 }
 
 function noteTouchMove(e) {
+  if (e.touches[0] && e.touches[0].touchType === 'stylus') return;
   e.preventDefault();
   if (notePanActive && e.touches.length === 1) {
     notePanX = e.touches[0].clientX - notePanStart.x;

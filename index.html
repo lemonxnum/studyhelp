@@ -4806,7 +4806,6 @@ function saveNote() {
   if (notes.length > 100) notes = notes.slice(0, 100);
   try { localStorage.setItem('app_notes', JSON.stringify(notes)); } catch(e) {}
   cancelNote();
-  if (ti) ti.value = '';
   buildNotesList();
   showToast('Note saved');
 }

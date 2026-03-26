@@ -1783,12 +1783,7 @@ body {
 
 
 /* ── NOTES PAGE ── */
-.note-canvas-wrap {
-  background: #1a1a1a;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
+/* old .note-canvas-wrap replaced by fullscreen overlay */
 
 .note-card {
   background: var(--surface);
@@ -1836,10 +1831,82 @@ body {
   border: 1px solid var(--border);
 }
 
-body.light-theme .note-canvas-wrap,
-body.light-theme #note-canvas { background: #f0ede8 !important; }
-
-#note-canvas { display: block; width: 100%; height: 520px; cursor: crosshair; touch-action: none; }
+/* ── FULLSCREEN NOTE OVERLAY ── */
+:root {
+  --note-grid-bold: rgba(255,255,255,0.13);
+  --note-grid-fine: rgba(255,255,255,0.05);
+}
+body.light-theme {
+  --note-grid-bold: rgba(0,0,0,0.15);
+  --note-grid-fine: rgba(0,0,0,0.06);
+}
+#note-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  flex-direction: column;
+  background: #1a1a1a;
+  overflow: hidden;
+}
+body.light-theme #note-overlay { background: #f0ede8; }
+#note-overlay.open { display: flex; }
+.note-fs-toolbar {
+  flex-shrink: 0;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  z-index: 2;
+}
+.note-fs-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+}
+.note-fs-row + .note-fs-row { border-top: 1px solid var(--border); }
+#note-fs-title {
+  flex: 1;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Serif Display', serif;
+  font-size: 0.95rem;
+  padding: 0.4rem 0.7rem;
+  outline: none;
+}
+#note-fs-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+#note-fs-wrapper {
+  position: absolute;
+  top: 0; left: 0;
+  width: 2400px;
+  height: 3200px;
+  transform-origin: 0 0;
+}
+#note-fs-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--note-grid-bold) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, var(--note-grid-bold) 1.5px, transparent 1.5px),
+    linear-gradient(var(--note-grid-fine) 0.5px, transparent 0.5px),
+    linear-gradient(90deg, var(--note-grid-fine) 0.5px, transparent 0.5px);
+  background-size: 100px 100px, 100px 100px, 25px 25px, 25px 25px;
+}
+#note-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  display: block;
+  width: 2400px;
+  height: 3200px;
+  cursor: crosshair;
+  touch-action: none;
+}
 
 
 /* ── NOTE TOOLBAR ── */
@@ -2514,53 +2581,6 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
     <button class="pp-start-btn" style="width:auto;padding:0.55rem 1.4rem" onclick="showNewNoteForm()">+ New Note</button>
   </div>
 
-  <!-- New note form -->
-  <div id="note-form" style="display:none;margin-bottom:1.5rem">
-    <div class="pp-terminal">
-      <div class="pp-terminal-header">New Note</div>
-      <div class="pp-terminal-body">
-        <div class="pp-form-field" style="margin-bottom:0.75rem">
-          <label class="pp-form-label">Title</label>
-          <input class="pp-input" type="text" id="note-title-input" placeholder="Note title...">
-        </div>
-        <label class="pp-form-label" style="margin-bottom:0.4rem;display:block">Write with Apple Pencil</label>
-        <div class="note-canvas-wrap">
-          <div class="note-toolbar">
-            <div class="note-toolbar-left">
-              <button class="note-tool-btn active" id="note-btn-pen" onclick="setNoteTool('pen')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                Pen
-              </button>
-              <button class="note-tool-btn" id="note-btn-eraser" onclick="setNoteTool('eraser')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 20 5 20"/><path d="M6.5 12.5L10 9l7 7-3.5 3.5a2 2 0 0 1-2.83 0l-4.17-4.17a2 2 0 0 1 0-2.83z"/></svg>
-                Eraser
-              </button>
-              <div class="note-stroke-wrap">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
-                <input type="range" id="note-stroke-size" min="1" max="20" value="2" class="note-stroke-slider">
-              </div>
-            </div>
-            <div class="note-toolbar-right">
-              <button class="note-action-btn" onclick="undoNoteCanvas()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-                Undo
-              </button>
-              <button class="note-action-btn" onclick="clearNoteCanvas()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-                Clear
-              </button>
-            </div>
-          </div>
-          <canvas id="note-canvas" class="pq-canvas"></canvas>
-        </div>
-        <div class="pp-form-actions" style="margin-top:0.75rem">
-          <button class="pp-start-btn" style="width:auto;padding:0.55rem 1.4rem" onclick="saveNote()">Save Note</button>
-          <button class="pp-action-btn reset-btn" onclick="cancelNote()">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Notes list -->
   <div id="notes-list"></div>
 </div>
@@ -2568,6 +2588,48 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
 
 </div><!-- end pages-container -->
 
+<!-- FULLSCREEN NOTE OVERLAY -->
+<div id="note-overlay">
+  <div class="note-fs-toolbar">
+    <div class="note-fs-row">
+      <button class="note-action-btn" onclick="cancelNote()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+      <input type="text" id="note-fs-title" placeholder="Note title...">
+      <button class="pp-start-btn" style="width:auto;padding:0.45rem 1.25rem;flex-shrink:0" onclick="saveNote()">Save</button>
+    </div>
+    <div class="note-fs-row">
+      <button class="note-tool-btn active" id="note-btn-pen" onclick="setNoteTool('pen')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Pen
+      </button>
+      <button class="note-tool-btn" id="note-btn-eraser" onclick="setNoteTool('eraser')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 20 5 20"/><path d="M6.5 12.5L10 9l7 7-3.5 3.5a2 2 0 0 1-2.83 0l-4.17-4.17a2 2 0 0 1 0-2.83z"/></svg>
+        Eraser
+      </button>
+      <div class="note-stroke-wrap">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/></svg>
+        <input type="range" id="note-stroke-size" min="1" max="20" value="2" class="note-stroke-slider">
+      </div>
+      <div style="flex:1"></div>
+      <button class="note-action-btn" onclick="undoNoteCanvas()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+        Undo
+      </button>
+      <button class="note-action-btn" onclick="clearNoteCanvas()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Clear
+      </button>
+    </div>
+  </div>
+  <div id="note-fs-viewport">
+    <div id="note-fs-wrapper">
+      <div id="note-fs-grid"></div>
+      <canvas id="note-canvas"></canvas>
+    </div>
+  </div>
+</div>
 
 <!-- DAY DETAIL OVERLAY -->
 <div class="day-overlay" id="dayOverlay">
@@ -4550,61 +4612,74 @@ function calTouchCancel() {
 // ── NOTES ─────────────────────────────────────────────────────────────────────
 var noteCanvas = null, noteCtx = null, noteDrawing = false;
 var noteTool = 'pen', noteHistory = [], noteStrokeSize = 2;
+var notePanX = 0, notePanY = 0, noteZoom = 1;
+var notePanActive = false, notePanStart = null;
+var notePinchActive = false, notePinchStartDist = 0;
+var notePinchStartZoom = 1, notePinchMidScreen = null, notePinchStartPan = null;
+var _noteEventsAttached = false;
+var NOTE_W = 2400, NOTE_H = 3200;
 
 function showNewNoteForm() {
-  document.getElementById('note-form').style.display = 'block';
-  setTimeout(initNoteCanvas, 60);
-  var ti = document.getElementById('note-title-input');
-  if (ti) ti.focus();
+  document.getElementById('note-overlay').classList.add('open');
+  notePanX = 0; notePanY = 0; noteZoom = 1;
+  noteHistory = [];
+  noteTool = 'pen';
+  document.getElementById('note-btn-pen').classList.add('active');
+  document.getElementById('note-btn-eraser').classList.remove('active');
+  requestAnimationFrame(function() {
+    noteCanvas = document.getElementById('note-canvas');
+    noteCtx = noteCanvas.getContext('2d');
+    noteCanvas.width = NOTE_W;
+    noteCanvas.height = NOTE_H;
+    noteCtx.clearRect(0, 0, NOTE_W, NOTE_H);
+    applyNoteTransform();
+    attachNoteEvents();
+    document.getElementById('note-fs-title').focus();
+  });
 }
 
 function cancelNote() {
-  document.getElementById('note-form').style.display = 'none';
-  noteCanvas = null; noteCtx = null;
+  document.getElementById('note-overlay').classList.remove('open');
+  document.getElementById('note-fs-title').value = '';
+  noteCanvas = null; noteCtx = null; noteDrawing = false;
+  notePanX = 0; notePanY = 0; noteZoom = 1;
 }
 
-function initNoteCanvas() {
-  noteCanvas = document.getElementById('note-canvas');
-  if (!noteCanvas) return;
+function applyNoteTransform() {
+  document.getElementById('note-fs-wrapper').style.transform =
+    'matrix(' + noteZoom + ',0,0,' + noteZoom + ',' + notePanX + ',' + notePanY + ')';
+}
 
-  // Use rAF to ensure layout is complete so offsetWidth is correct
-  requestAnimationFrame(function() {
-    var w = noteCanvas.offsetWidth || 700;
-    var h = 460;
-    noteCanvas.width  = w;
-    noteCanvas.height = h;
-    noteCtx = noteCanvas.getContext('2d');
-    var isLight = document.body.classList.contains('light-theme');
-    noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
-    noteCtx.fillRect(0, 0, w, h);
-    noteHistory = [];
-
-    noteCanvas.addEventListener('pointerdown', notePointerDown);
-    noteCanvas.addEventListener('pointermove', notePointerMove);
-    noteCanvas.addEventListener('pointerup',   notePointerUp);
-    noteCanvas.addEventListener('pointerout',  notePointerUp);
-    noteCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
-    noteCanvas.addEventListener('touchmove',  function(e){ e.preventDefault(); }, { passive: false });
-
-    var sz = document.getElementById('note-stroke-size');
-    if (sz) sz.addEventListener('input', function(){ noteStrokeSize = parseInt(this.value); });
-  });
+function attachNoteEvents() {
+  if (_noteEventsAttached) return;
+  _noteEventsAttached = true;
+  noteCanvas.addEventListener('pointerdown', notePointerDown);
+  noteCanvas.addEventListener('pointermove', notePointerMove);
+  noteCanvas.addEventListener('pointerup',   notePointerUp);
+  noteCanvas.addEventListener('pointerout',  notePointerUp);
+  noteCanvas.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
+  noteCanvas.addEventListener('touchmove',  function(e){ e.preventDefault(); }, { passive: false });
+  document.getElementById('note-stroke-size').addEventListener('input', function(){ noteStrokeSize = parseInt(this.value); });
+  var vp = document.getElementById('note-fs-viewport');
+  vp.addEventListener('touchstart', noteTouchStart, { passive: false });
+  vp.addEventListener('touchmove',  noteTouchMove,  { passive: false });
+  vp.addEventListener('touchend',   noteTouchEnd,   { passive: true });
 }
 
 function getNotePos(e) {
   var rect = noteCanvas.getBoundingClientRect();
   return {
-    x: (e.clientX - rect.left) * (noteCanvas.width / rect.width),
+    x: (e.clientX - rect.left) * (noteCanvas.width  / rect.width),
     y: (e.clientY - rect.top)  * (noteCanvas.height / rect.height)
   };
 }
 
 function notePointerDown(e) {
-  if (e.pointerType === 'touch') return;
+  if (e.pointerType !== 'pen') return;
   e.preventDefault();
   noteCanvas.setPointerCapture(e.pointerId);
   noteDrawing = true;
-  noteHistory.push(noteCtx.getImageData(0, 0, noteCanvas.width, noteCanvas.height));
+  noteHistory.push(noteCtx.getImageData(0, 0, NOTE_W, NOTE_H));
   if (noteHistory.length > 30) noteHistory.shift();
   var p = getNotePos(e);
   noteCtx.beginPath();
@@ -4612,12 +4687,19 @@ function notePointerDown(e) {
 }
 
 function notePointerMove(e) {
-  if (e.pointerType === 'touch' || !noteDrawing) return;
+  if (e.pointerType !== 'pen' || !noteDrawing) return;
   e.preventDefault();
   var p = getNotePos(e);
   var isLight = document.body.classList.contains('light-theme');
-  noteCtx.lineWidth   = noteTool === 'eraser' ? noteStrokeSize * 6 : noteStrokeSize;
-  noteCtx.strokeStyle = noteTool === 'eraser' ? (isLight ? '#f0ede8' : '#1a1a1a') : (isLight ? '#1a1a1a' : '#f0ede8');
+  if (noteTool === 'eraser') {
+    noteCtx.globalCompositeOperation = 'destination-out';
+    noteCtx.lineWidth = noteStrokeSize * 8;
+    noteCtx.strokeStyle = 'rgba(0,0,0,1)';
+  } else {
+    noteCtx.globalCompositeOperation = 'source-over';
+    noteCtx.lineWidth = noteStrokeSize;
+    noteCtx.strokeStyle = isLight ? '#111110' : '#f0ede8';
+  }
   noteCtx.lineCap  = 'round';
   noteCtx.lineJoin = 'round';
   noteCtx.lineTo(p.x, p.y);
@@ -4627,25 +4709,59 @@ function notePointerMove(e) {
 }
 
 function notePointerUp(e) {
-  if (e && e.pointerType === 'touch') return;
+  if (e && e.pointerType !== 'pen') return;
   noteDrawing = false;
-  if (noteCtx) noteCtx.beginPath();
+  if (noteCtx) { noteCtx.beginPath(); noteCtx.globalCompositeOperation = 'source-over'; }
+}
+
+function noteTouchStart(e) {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    notePanActive = true; notePinchActive = false;
+    notePanStart = { x: e.touches[0].clientX - notePanX, y: e.touches[0].clientY - notePanY };
+  } else if (e.touches.length === 2) {
+    notePanActive = false; notePinchActive = true;
+    var dx = e.touches[1].clientX - e.touches[0].clientX;
+    var dy = e.touches[1].clientY - e.touches[0].clientY;
+    notePinchStartDist = Math.sqrt(dx*dx + dy*dy);
+    notePinchStartZoom = noteZoom;
+    notePinchMidScreen = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+    notePinchStartPan = { x: notePanX, y: notePanY };
+  }
+}
+
+function noteTouchMove(e) {
+  e.preventDefault();
+  if (notePanActive && e.touches.length === 1) {
+    notePanX = e.touches[0].clientX - notePanStart.x;
+    notePanY = e.touches[0].clientY - notePanStart.y;
+    applyNoteTransform();
+  } else if (notePinchActive && e.touches.length === 2) {
+    var dx = e.touches[1].clientX - e.touches[0].clientX;
+    var dy = e.touches[1].clientY - e.touches[0].clientY;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    var newZoom = Math.min(5, Math.max(0.2, notePinchStartZoom * dist / notePinchStartDist));
+    notePanX = notePinchMidScreen.x - (notePinchMidScreen.x - notePinchStartPan.x) / notePinchStartZoom * newZoom;
+    notePanY = notePinchMidScreen.y - (notePinchMidScreen.y - notePinchStartPan.y) / notePinchStartZoom * newZoom;
+    noteZoom = newZoom;
+    applyNoteTransform();
+  }
+}
+
+function noteTouchEnd(e) {
+  if (e.touches.length === 0) { notePanActive = false; notePinchActive = false; }
 }
 
 function setNoteTool(tool) {
   noteTool = tool;
-  var pen = document.getElementById('note-btn-pen');
-  var era = document.getElementById('note-btn-eraser');
-  if (pen) pen.classList.toggle('active', tool === 'pen');
-  if (era) era.classList.toggle('active', tool === 'eraser');
+  document.getElementById('note-btn-pen').classList.toggle('active', tool === 'pen');
+  document.getElementById('note-btn-eraser').classList.toggle('active', tool === 'eraser');
 }
 
 function clearNoteCanvas() {
   if (!noteCtx) return;
-  noteHistory.push(noteCtx.getImageData(0, 0, noteCanvas.width, noteCanvas.height));
-  var isLight = document.body.classList.contains('light-theme');
-  noteCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
-  noteCtx.fillRect(0, 0, noteCanvas.width, noteCanvas.height);
+  noteHistory.push(noteCtx.getImageData(0, 0, NOTE_W, NOTE_H));
+  noteCtx.clearRect(0, 0, NOTE_W, NOTE_H);
 }
 
 function undoNoteCanvas() {
@@ -4653,11 +4769,33 @@ function undoNoteCanvas() {
   noteCtx.putImageData(noteHistory.pop(), 0, 0);
 }
 
+function drawNoteGridToContext(ctx, w, h, isLight) {
+  var fine = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)';
+  var bold = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.13)';
+  ctx.lineWidth = 0.5;
+  for (var x = 0; x <= w; x += 25) {
+    ctx.strokeStyle = (x % 100 === 0) ? bold : fine;
+    ctx.lineWidth   = (x % 100 === 0) ? 1.5  : 0.5;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  }
+  for (var y = 0; y <= h; y += 25) {
+    ctx.strokeStyle = (y % 100 === 0) ? bold : fine;
+    ctx.lineWidth   = (y % 100 === 0) ? 1.5  : 0.5;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+}
+
 function saveNote() {
-  var ti    = document.getElementById('note-title-input');
-  var title = ti ? ti.value.trim() : '';
-  if (!title) title = 'Untitled';
-  var drawing = noteCanvas ? noteCanvas.toDataURL('image/png') : null;
+  var title = document.getElementById('note-fs-title').value.trim() || 'Untitled';
+  var off = document.createElement('canvas');
+  off.width = NOTE_W; off.height = NOTE_H;
+  var offCtx = off.getContext('2d');
+  var isLight = document.body.classList.contains('light-theme');
+  offCtx.fillStyle = isLight ? '#f0ede8' : '#1a1a1a';
+  offCtx.fillRect(0, 0, NOTE_W, NOTE_H);
+  drawNoteGridToContext(offCtx, NOTE_W, NOTE_H, isLight);
+  if (noteCanvas) offCtx.drawImage(noteCanvas, 0, 0);
+  var drawing = off.toDataURL('image/png');
   var notes = getNotes();
   notes.unshift({
     id: Date.now(),

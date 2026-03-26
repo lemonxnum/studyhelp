@@ -4175,6 +4175,7 @@ var ppNewSubj  = 'physics';
 var ppNewPaper = 1;
 var ppNewYear  = 2024;
 var ppEditingId = null;
+var ppCompletingId = null;
 
 function buildPastPapersPage() {
   var container = document.getElementById('pp-content');
@@ -4184,16 +4185,19 @@ function buildPastPapersPage() {
   var subjShort  = { physics:'PHY', maths:'MAT', biology:'BIO' };
 
   // Stats
-  var scores = papers.map(function(p) {
+  var donePapers = papers.filter(function(p){ return p.status !== 'inprogress'; });
+  var scores = donePapers.map(function(p) {
     if (!p.score) return null;
     var m = p.score.match(/(\d+)\s*\/\s*(\d+)/);
     return m ? Math.round(parseInt(m[1]) / parseInt(m[2]) * 100) : null;
   }).filter(function(x) { return x !== null; });
   var avgScore = scores.length ? Math.round(scores.reduce(function(a,b){return a+b;},0) / scores.length) : null;
+  var ipCount = papers.filter(function(p){ return p.status === 'inprogress'; }).length;
 
   var statsHTML = papers.length ?
     '<div class="pp-stats-bar" style="margin-bottom:1.5rem">' +
-      '<div class="pp-stat"><span class="pp-stat-num done-col">' + papers.length + '</span><span class="pp-stat-lbl">Done</span></div>' +
+      '<div class="pp-stat"><span class="pp-stat-num done-col">' + donePapers.length + '</span><span class="pp-stat-lbl">Done</span></div>' +
+      (ipCount ? '<div class="pp-stat"><span class="pp-stat-num" style="color:var(--amber)">' + ipCount + '</span><span class="pp-stat-lbl">In Progress</span></div>' : '') +
       (avgScore !== null ? '<div class="pp-stat"><span class="pp-stat-num done-col">' + avgScore + '%</span><span class="pp-stat-lbl">Avg Score</span></div>' : '') +
     '</div>' : '';
 
@@ -4219,44 +4223,68 @@ function buildPastPapersPage() {
         }).join('') +
       '</div>' +
       '<input class="pp-score-input" id="ppNewScore" type="text" placeholder="Score  e.g. 78/100  (optional)">' +
-      '<button class="pp-start-btn" onclick="ppAdd()">Log Paper</button>' +
+      '<div style="display:flex;gap:0.6rem">' +
+        '<button class="pp-action-btn" style="flex:1;justify-content:center" onclick="ppStart()">Mark as In Progress</button>' +
+        '<button class="pp-start-btn"  style="flex:1" onclick="ppAdd()">Log Completed</button>' +
+      '</div>' +
     '</div>';
 
-  // Completed list
-  var listHTML = '';
-  if (papers.length) {
-    listHTML += '<div class="pp-list-header"><span class="pp-list-title">Completed Papers</span></div>';
-    listHTML += papers.map(function(p) {
-      if (ppEditingId === p.id) {
-        return '<div class="pp-edit-row" id="pp-edit-' + p.id + '">' +
-          '<input id="pp-edit-name-'  + p.id + '" value="' + escH(p.title||'') + '" placeholder="Name">' +
-          '<input id="pp-edit-score-' + p.id + '" value="' + escH(p.score||'') + '" placeholder="Score e.g. 78/100">' +
-          '<button class="pp-edit-save" onclick="ppSaveEdit(\'' + p.id + '\')">Save</button>' +
-          '<button class="pp-row-btn"  onclick="ppCancelEdit()">Cancel</button>' +
-        '</div>';
-      }
-      var scoreNum = (function() {
-        if (!p.score) return null;
-        var m = p.score.match(/(\d+)\s*\/\s*(\d+)/);
-        return m ? Math.round(parseInt(m[1]) / parseInt(m[2]) * 100) : null;
-      })();
-      var scoreColour = scoreNum === null ? '' : scoreNum >= 70 ? 'var(--green)' : scoreNum >= 50 ? 'var(--amber)' : 'var(--red)';
-      return '<div class="pp-row">' +
-        '<div class="pp-row-badge" style="border-color:' + subjColour[p.subject] + ';color:' + subjColour[p.subject] + '">' + subjShort[p.subject] + '</div>' +
-        '<div class="pp-row-info">' +
-          '<div class="pp-row-name">' + escH(p.title || 'Untitled') + '</div>' +
-          '<div class="pp-row-meta">' +
-            (p.score ? '<span style="color:' + scoreColour + ';font-weight:600">' + escH(p.score) + (scoreNum !== null ? ' (' + scoreNum + '%)' : '') + '</span>' : '<span style="color:var(--text-dim)">No score</span>') +
-            (p.date ? '<span>' + p.date + '</span>' : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="pp-row-actions">' +
-          '<button class="pp-row-btn" onclick="ppOpenEdit(\'' + p.id + '\')">Edit</button>' +
-          '<button class="pp-row-btn del" onclick="ppDelete(\'' + p.id + '\')">&#x2715;</button>' +
-        '</div>' +
+  // Split papers by status
+  var inProgress = papers.filter(function(p){ return p.status === 'inprogress'; });
+  var completed  = papers.filter(function(p){ return p.status !== 'inprogress'; });
+
+  function renderRow(p) {
+    if (ppEditingId === p.id) {
+      return '<div class="pp-edit-row" id="pp-edit-' + p.id + '">' +
+        '<input id="pp-edit-name-'  + p.id + '" value="' + escH(p.title||'') + '" placeholder="Name">' +
+        '<input id="pp-edit-score-' + p.id + '" value="' + escH(p.score||'') + '" placeholder="Score e.g. 78/100">' +
+        '<button class="pp-edit-save" onclick="ppSaveEdit(\'' + p.id + '\')">Save</button>' +
+        '<button class="pp-row-btn"  onclick="ppCancelEdit()">Cancel</button>' +
       '</div>';
-    }).join('');
-  } else {
+    }
+    if (ppCompletingId === p.id) {
+      return '<div class="pp-edit-row" id="pp-complete-' + p.id + '">' +
+        '<span style="flex:1;font-size:0.8rem;color:var(--text)">' + escH(p.title||'Untitled') + '</span>' +
+        '<input id="pp-complete-score-' + p.id + '" placeholder="Score e.g. 78/100" style="flex:1">' +
+        '<button class="pp-edit-save" onclick="ppFinish(\'' + p.id + '\')">Done</button>' +
+        '<button class="pp-row-btn"  onclick="ppCancelComplete()">Cancel</button>' +
+      '</div>';
+    }
+    var scoreNum = (function() {
+      if (!p.score) return null;
+      var m = p.score.match(/(\d+)\s*\/\s*(\d+)/);
+      return m ? Math.round(parseInt(m[1]) / parseInt(m[2]) * 100) : null;
+    })();
+    var scoreColour = scoreNum === null ? '' : scoreNum >= 70 ? 'var(--green)' : scoreNum >= 50 ? 'var(--amber)' : 'var(--red)';
+    var isIP = p.status === 'inprogress';
+    return '<div class="pp-row">' +
+      '<div class="pp-row-badge" style="border-color:' + (isIP ? 'var(--amber)' : subjColour[p.subject]) + ';color:' + (isIP ? 'var(--amber)' : subjColour[p.subject]) + '">' + subjShort[p.subject] + '</div>' +
+      '<div class="pp-row-info">' +
+        '<div class="pp-row-name">' + escH(p.title || 'Untitled') + '</div>' +
+        '<div class="pp-row-meta">' +
+          (isIP ? '<span style="color:var(--amber);font-weight:600">In Progress</span>' :
+            (p.score ? '<span style="color:' + scoreColour + ';font-weight:600">' + escH(p.score) + (scoreNum !== null ? ' (' + scoreNum + '%)' : '') + '</span>' : '<span style="color:var(--text-dim)">No score</span>')) +
+          (p.date ? '<span>' + p.date + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="pp-row-actions">' +
+        (isIP ? '<button class="pp-edit-save" onclick="ppOpenComplete(\'' + p.id + '\')">Complete</button>' :
+                '<button class="pp-row-btn" onclick="ppOpenEdit(\'' + p.id + '\')">Edit</button>') +
+        '<button class="pp-row-btn del" onclick="ppDelete(\'' + p.id + '\')">&#x2715;</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var listHTML = '';
+  if (inProgress.length) {
+    listHTML += '<div class="pp-list-header"><span class="pp-list-title" style="color:var(--amber)">In Progress</span></div>';
+    listHTML += inProgress.map(renderRow).join('');
+  }
+  if (completed.length) {
+    listHTML += '<div class="pp-list-header"><span class="pp-list-title">Completed Papers</span></div>';
+    listHTML += completed.map(renderRow).join('');
+  }
+  if (!papers.length) {
     listHTML = '<div class="pp-empty">No papers logged yet — add one above.</div>';
   }
 
@@ -4278,10 +4306,36 @@ function ppAdd() {
   var score = scoreEl ? scoreEl.value.trim() : '';
   var id = 'pp_' + Date.now();
   var papers = getPP();
-  papers.unshift({ id:id, title:title, subject:ppNewSubj, score:score, date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) });
+  papers.unshift({ id:id, title:title, subject:ppNewSubj, score:score, status:'complete', date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) });
   savePP(papers);
   buildPastPapersPage();
   showToast('Paper logged');
+}
+
+function ppStart() {
+  var subjLabel = ppNewSubj.charAt(0).toUpperCase() + ppNewSubj.slice(1);
+  var title = subjLabel + ' — ' + ppNewYear + ' Paper ' + ppNewPaper;
+  var id = 'pp_' + Date.now();
+  var papers = getPP();
+  papers.unshift({ id:id, title:title, subject:ppNewSubj, score:'', status:'inprogress', date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) });
+  savePP(papers);
+  buildPastPapersPage();
+  showToast('Marked as in progress');
+}
+
+function ppOpenComplete(id) { ppCompletingId = id; ppEditingId = null; buildPastPapersPage(); }
+function ppCancelComplete() { ppCompletingId = null; buildPastPapersPage(); }
+
+function ppFinish(id) {
+  var scoreEl = document.getElementById('pp-complete-score-' + id);
+  var score = scoreEl ? scoreEl.value.trim() : '';
+  var papers = getPP();
+  var p = papers.find(function(x){ return x.id === id; });
+  if (p) { p.status = 'complete'; p.score = score; p.date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+  savePP(papers);
+  ppCompletingId = null;
+  buildPastPapersPage();
+  showToast('Paper completed');
 }
 
 function ppDelete(id) {

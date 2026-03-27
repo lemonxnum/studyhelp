@@ -1828,6 +1828,9 @@ body {
 .note-card-img {
   width: 100%;
   height: auto;
+  max-height: 420px;
+  object-fit: cover;
+  object-position: top left;
   display: block;
   border-radius: 4px;
   border: 1px solid var(--border);
@@ -4719,6 +4722,9 @@ function editNote(id) {
   noteTool = 'pen';
   document.getElementById('note-btn-pen').classList.add('active');
   document.getElementById('note-btn-eraser').classList.remove('active');
+  // Hide CSS grid — it's already baked into the saved image
+  var fsGrid = document.getElementById('note-fs-grid');
+  if (fsGrid) fsGrid.style.display = 'none';
   requestAnimationFrame(function() {
     noteCanvas = document.getElementById('note-canvas');
     noteCtx = noteCanvas.getContext('2d');
@@ -4742,6 +4748,8 @@ function cancelNote() {
   noteCanvas = null; noteCtx = null; noteDrawing = false;
   notePanX = 0; notePanY = 0; noteZoom = 1;
   noteEditingId = null;
+  var fsGrid = document.getElementById('note-fs-grid');
+  if (fsGrid) fsGrid.style.display = '';
 }
 
 function applyNoteTransform() {

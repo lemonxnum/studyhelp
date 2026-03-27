@@ -1832,8 +1832,10 @@ body {
 
 .note-card-img {
   width: 100%;
+  height: auto;
   border-radius: 4px;
   border: 1px solid var(--border);
+  display: block;
 }
 
 body.light-theme .note-canvas-wrap,
@@ -2517,7 +2519,7 @@ body.light-theme #note-canvas { background: #f0ede8 !important; }
   <!-- New note form -->
   <div id="note-form" style="display:none;margin-bottom:1.5rem">
     <div class="pp-terminal">
-      <div class="pp-terminal-header">New Note</div>
+      <div class="pp-terminal-header" id="note-form-header">New Note</div>
       <div class="pp-terminal-body">
         <div class="pp-form-field" style="margin-bottom:0.75rem">
           <label class="pp-form-label">Title</label>
@@ -4543,17 +4545,49 @@ function calTouchCancel() {
 // ── NOTES ─────────────────────────────────────────────────────────────────────
 var noteCanvas = null, noteCtx = null, noteDrawing = false;
 var noteTool = 'pen', noteHistory = [], noteStrokeSize = 2;
+var noteEditingId = null;
 
 function showNewNoteForm() {
+  noteEditingId = null;
+  var hdr = document.getElementById('note-form-header');
+  if (hdr) hdr.textContent = 'New Note';
+  var ti = document.getElementById('note-title-input');
+  if (ti) ti.value = '';
   document.getElementById('note-form').style.display = 'block';
   setTimeout(initNoteCanvas, 60);
-  var ti = document.getElementById('note-title-input');
   if (ti) ti.focus();
+}
+
+function editNote(id) {
+  var notes = getNotes();
+  var note = null;
+  for (var i = 0; i < notes.length; i++) { if (notes[i].id === id) { note = notes[i]; break; } }
+  if (!note) return;
+  noteEditingId = id;
+  var hdr = document.getElementById('note-form-header');
+  if (hdr) hdr.textContent = 'Edit Note';
+  var ti = document.getElementById('note-title-input');
+  if (ti) ti.value = note.title || '';
+  document.getElementById('note-form').style.display = 'block';
+  setTimeout(function() {
+    initNoteCanvas();
+    if (note.drawing) {
+      setTimeout(function() {
+        var img = new Image();
+        img.onload = function() {
+          if (noteCtx) noteCtx.drawImage(img, 0, 0, noteCanvas.width, noteCanvas.height);
+        };
+        img.src = note.drawing;
+      }, 150);
+    }
+  }, 60);
+  window.scrollTo(0, 0);
 }
 
 function cancelNote() {
   document.getElementById('note-form').style.display = 'none';
   noteCanvas = null; noteCtx = null;
+  noteEditingId = null;
 }
 
 function initNoteCanvas() {
@@ -4563,7 +4597,7 @@ function initNoteCanvas() {
   // Use rAF to ensure layout is complete so offsetWidth is correct
   requestAnimationFrame(function() {
     var w = noteCanvas.offsetWidth || 700;
-    var h = 460;
+    var h = noteCanvas.offsetHeight || 460;
     noteCanvas.width  = w;
     noteCanvas.height = h;
     noteCtx = noteCanvas.getContext('2d');
@@ -4652,16 +4686,24 @@ function saveNote() {
   if (!title) title = 'Untitled';
   var drawing = noteCanvas ? noteCanvas.toDataURL('image/png') : null;
   var notes = getNotes();
-  notes.unshift({
-    id: Date.now(),
-    title: title,
-    date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}),
-    drawing: drawing
-  });
-  if (notes.length > 100) notes = notes.slice(0, 100);
+  if (noteEditingId !== null) {
+    notes = notes.map(function(n) {
+      if (n.id === noteEditingId) {
+        return { id: n.id, title: title, date: n.date, drawing: drawing };
+      }
+      return n;
+    });
+  } else {
+    notes.unshift({
+      id: Date.now(),
+      title: title,
+      date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}),
+      drawing: drawing
+    });
+    if (notes.length > 100) notes = notes.slice(0, 100);
+  }
   try { localStorage.setItem('app_notes', JSON.stringify(notes)); } catch(e) {}
   cancelNote();
-  if (ti) ti.value = '';
   buildNotesList();
   showToast('Note saved');
 }
@@ -4683,6 +4725,7 @@ function buildNotesList() {
       '<div class="note-card-header" onclick="toggleNote(' + n.id + ')">' +
         '<div class="note-card-title">' + n.title + '</div>' +
         '<div class="note-card-date">' + n.date + '</div>' +
+        '<button class="pp-action-btn" style="margin-right:0.4rem" onclick="editNote(' + n.id + ');event.stopPropagation()">Edit</button>' +
         '<button class="pp-action-btn reset-btn" onclick="deleteNote(' + n.id + ');event.stopPropagation()">X</button>' +
       '</div>' +
       '<div class="note-card-body" id="note-body-' + n.id + '">' +

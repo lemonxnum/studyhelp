@@ -1827,6 +1827,8 @@ body {
 
 .note-card-img {
   width: 100%;
+  height: auto;
+  display: block;
   border-radius: 4px;
   border: 1px solid var(--border);
 }
@@ -4676,6 +4678,7 @@ function calTouchCancel() {
 var noteCanvas = null, noteCtx = null, noteDrawing = false;
 var noteTool = 'pen', noteHistory = [], noteStrokeSize = 2;
 var notePanX = 0, notePanY = 0, noteZoom = 1;
+var noteEditingId = null;
 var _noteLastX = 0, _noteLastY = 0;
 var notePanActive = false, notePanStart = null;
 var notePinchActive = false, notePinchStartDist = 0;
@@ -4684,6 +4687,7 @@ var _noteEventsAttached = false;
 var NOTE_W = 2400, NOTE_H = 3200;
 
 function showNewNoteForm() {
+  noteEditingId = null;
   document.getElementById('note-overlay').classList.add('open');
   notePanX = 0; notePanY = 0; noteZoom = 1;
   noteHistory = [];
@@ -4698,7 +4702,37 @@ function showNewNoteForm() {
     noteCtx.clearRect(0, 0, NOTE_W, NOTE_H);
     applyNoteTransform();
     attachNoteEvents();
+    document.getElementById('note-fs-title').value = '';
     document.getElementById('note-fs-title').focus();
+  });
+}
+
+function editNote(id) {
+  var notes = getNotes();
+  var note = null;
+  for (var i = 0; i < notes.length; i++) { if (notes[i].id === id) { note = notes[i]; break; } }
+  if (!note) return;
+  noteEditingId = id;
+  document.getElementById('note-overlay').classList.add('open');
+  notePanX = 0; notePanY = 0; noteZoom = 1;
+  noteHistory = [];
+  noteTool = 'pen';
+  document.getElementById('note-btn-pen').classList.add('active');
+  document.getElementById('note-btn-eraser').classList.remove('active');
+  requestAnimationFrame(function() {
+    noteCanvas = document.getElementById('note-canvas');
+    noteCtx = noteCanvas.getContext('2d');
+    noteCanvas.width = NOTE_W;
+    noteCanvas.height = NOTE_H;
+    noteCtx.clearRect(0, 0, NOTE_W, NOTE_H);
+    applyNoteTransform();
+    attachNoteEvents();
+    document.getElementById('note-fs-title').value = note.title || '';
+    if (note.drawing) {
+      var img = new Image();
+      img.onload = function() { if (noteCtx) noteCtx.drawImage(img, 0, 0); };
+      img.src = note.drawing;
+    }
   });
 }
 
@@ -4707,6 +4741,7 @@ function cancelNote() {
   document.getElementById('note-fs-title').value = '';
   noteCanvas = null; noteCtx = null; noteDrawing = false;
   notePanX = 0; notePanY = 0; noteZoom = 1;
+  noteEditingId = null;
 }
 
 function applyNoteTransform() {
@@ -4880,13 +4915,22 @@ function saveNote() {
   if (noteCanvas) offCtx.drawImage(noteCanvas, 0, 0);
   var drawing = off.toDataURL('image/png');
   var notes = getNotes();
-  notes.unshift({
-    id: Date.now(),
-    title: title,
-    date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}),
-    drawing: drawing
-  });
-  if (notes.length > 100) notes = notes.slice(0, 100);
+  if (noteEditingId !== null) {
+    notes = notes.map(function(n) {
+      if (n.id === noteEditingId) {
+        return { id: n.id, title: title, date: n.date, drawing: drawing };
+      }
+      return n;
+    });
+  } else {
+    notes.unshift({
+      id: Date.now(),
+      title: title,
+      date: new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}),
+      drawing: drawing
+    });
+    if (notes.length > 100) notes = notes.slice(0, 100);
+  }
   try { localStorage.setItem('app_notes', JSON.stringify(notes)); } catch(e) {}
   cancelNote();
   buildNotesList();
@@ -4910,6 +4954,7 @@ function buildNotesList() {
       '<div class="note-card-header" onclick="toggleNote(' + n.id + ')">' +
         '<div class="note-card-title">' + n.title + '</div>' +
         '<div class="note-card-date">' + n.date + '</div>' +
+        '<button class="pp-action-btn" style="margin-right:0.4rem" onclick="editNote(' + n.id + ');event.stopPropagation()">Edit</button>' +
         '<button class="pp-action-btn reset-btn" onclick="deleteNote(' + n.id + ');event.stopPropagation()">X</button>' +
       '</div>' +
       '<div class="note-card-body" id="note-body-' + n.id + '">' +

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Level Topics by Paper</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111110;
+  --surface: #1c1c1a;
+  --surface2: #242422;
+  --surface3: #2e2e2b;
+  --border: #333330;
+  --text: #f0ede8;
+  --text-muted: #7a7770;
+  --text-dim: #4a4742;
+
+  --phy: #60a5fa;
+  --phy-bg: rgba(96,165,250,0.07);
+  --phy-border: rgba(96,165,250,0.2);
+  --phy-tag: rgba(96,165,250,0.15);
+
+  --mat: #fb923c;
+  --mat-bg: rgba(251,146,60,0.07);
+  --mat-border: rgba(251,146,60,0.2);
+  --mat-tag: rgba(251,146,60,0.15);
+
+  --bio: #4ade80;
+  --bio-bg: rgba(74,222,128,0.07);
+  --bio-border: rgba(74,222,128,0.2);
+  --bio-tag: rgba(74,222,128,0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 4rem;
+}
+
+header {
+  padding: 2.5rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+header h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+header p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+.subject-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.subj-tab {
+  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.55rem 1.2rem;
+  border-radius: 6px 6px 0 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  position: relative;
+  top: 1px;
+}
+.subj-tab:hover { color: var(--text); }
+.subj-tab.phy.active { color: var(--phy); border-bottom-color: var(--phy); }
+.subj-tab.mat.active { color: var(--mat); border-bottom-color: var(--mat); }
+.subj-tab.bio.active { color: var(--bio); border-bottom-color: var(--bio); }
+
+.subject-panel { display: none; padding: 2rem; max-width: 1100px; margin: 0 auto; }
+.subject-panel.active { display: block; }
+
+.subject-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin-bottom: 0.4rem;
+}
+.subject-title.phy { color: var(--phy); }
+.subject-title.mat { color: var(--mat); }
+.subject-title.bio { color: var(--bio); }
+
+.subject-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.papers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.paper-card {
+  background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.paper-header {
+  padding: 1rem 1.2rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.paper-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.phy .paper-label { color: var(--phy); }
+.mat .paper-label { color: var(--mat); }
+.bio .paper-label { color: var(--bio); }
+
+.paper-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.paper-date {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.paper-content { padding: 1rem 1.2rem; }
+
+.section-block { margin-bottom: 1.2rem; }
+.section-block:last-child { margin-bottom: 0; }
+
+.section-name {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.topic-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.topic-item {
+  font-size: 0.77rem;
+  line-height: 1.4;
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.1s;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.topic-item::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  margin-top: 0.45em;
+  flex-shrink: 0;
+}
+.topic-item:hover { background: var(--surface2); }
+
+.topic-count {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface3);
+  padding: 0.1rem 0.5rem;
+  border-radius: 99px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 600px) {
+  .papers-grid { grid-template-columns: 1fr; }
+  .subject-panel { padding: 1.2rem; }
+  header { padding: 1.5rem 1.2rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>A Level Topics by Paper</h1>
+  <p>Physics · Maths · Biology &mdash; all topics organised by subject and exam paper</p>
+</header>
+
+<div class="subject-tabs">
+  <button class="subj-tab phy active" onclick="showSubject('physics', this)">Physics</button>
+  <button class="subj-tab mat" onclick="showSubject('maths', this)">Maths</button>
+  <button class="subj-tab bio" onclick="showSubject('biology', this)">Biology</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ PHYSICS -->
+<div class="subject-panel active" id="panel-physics">
+  <div class="subject-title phy">Physics</div>
+  <div class="subject-subtitle">AQA A Level &nbsp;·&nbsp; 3 papers</div>
+
+  <div class="papers-grid">
+
+    <!-- Paper 1 -->
+    <div class="paper-card phy">
+      <div class="paper-header">
+        <div class="paper-label">Paper 1</div>
+        <div class="paper-title">Measurements, Particles, Waves, Mechanics &amp; Electricity</div>
+        <div class="paper-date">20 May 2026 &nbsp;&bull;&nbsp; 85 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Measurements &amp; Errors <span class="topic-count">6</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">SI units &amp; prefixes</li>
+            <li class="topic-item">Random &amp; systematic errors</li>
+            <li class="topic-item">Accuracy &amp; precision</li>
+            <li class="topic-item">Uncertainty (absolute, fractional, %)</li>
+            <li class="topic-item">Combining uncertainties</li>
+            <li class="topic-item">Graphs &amp; gradients</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Particles &amp; Radiation <span class="topic-count">11</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Atomic structure</li>
+            <li class="topic-item">Stable &amp; unstable nuclei</li>
+            <li class="topic-item">Particles &amp; antiparticles</li>
+            <li class="topic-item">Particle interactions (photons, leptons, quarks)</li>
+            <li class="topic-item">Conservation laws (charge, baryon, lepton)</li>
+            <li class="topic-item">Quarks &amp; hadrons</li>
+            <li class="topic-item">Strange particles</li>
+            <li class="topic-item">Feynman diagrams</li>
+            <li class="topic-item">Photoelectric effect</li>
+            <li class="topic-item">Energy levels &amp; photon emission</li>
+            <li class="topic-item">Wave-particle duality</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Waves <span class="topic-count">11</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Progressive waves (amplitude, frequency, wavelength)</li>
+            <li class="topic-item">Transverse &amp; longitudinal waves</li>
+            <li class="topic-item">Superposition</li>
+            <li class="topic-item">Stationary waves</li>
+            <li class="topic-item">Diffraction</li>
+            <li class="topic-item">Two-source interference</li>
+            <li class="topic-item">Young's double slit</li>
+            <li class="topic-item">Diffraction grating</li>
+            <li class="topic-item">Refraction &amp; Snell's law</li>
+            <li class="topic-item">Total internal reflection</li>
+            <li class="topic-item">Polarisation</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Mechanics &amp; Materials <span class="topic-count">10</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Scalars &amp; vectors</li>
+            <li class="topic-item">Moments</li>
+            <li class="topic-item">Motion along a line (SUVAT)</li>
+            <li class="topic-item">Projectile motion</li>
+            <li class="topic-item">Newton's laws</li>
+            <li class="topic-item">Momentum &amp; impulse</li>
+            <li class="topic-item">Work, energy &amp; power</li>
+            <li class="topic-item">Conservation of energy</li>
+            <li class="topic-item">Bulk properties of solids (stress, strain, Young's modulus)</li>
+            <li class="topic-item">Force-extension graphs &amp; Hooke's law</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Electricity <span class="topic-count">9</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Charge, current &amp; potential difference</li>
+            <li class="topic-item">Resistance &amp; Ohm's law</li>
+            <li class="topic-item">I-V characteristics</li>
+            <li class="topic-item">Resistivity</li>
+            <li class="topic-item">Power &amp; energy</li>
+            <li class="topic-item">Series &amp; parallel circuits</li>
+            <li class="topic-item">EMF &amp; internal resistance</li>
+            <li class="topic-item">Potential dividers</li>
+            <li class="topic-item">Kirchhoff's laws</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 2 -->
+    <div class="paper-card phy">
+      <div class="paper-header">
+        <div class="paper-label">Paper 2</div>
+        <div class="paper-title">Further Mechanics, Thermal Physics &amp; Fields</div>
+        <div class="paper-date">1 Jun 2026 &nbsp;&bull;&nbsp; 85 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Further Mechanics <span class="topic-count">5</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Circular motion (angular velocity, centripetal acceleration)</li>
+            <li class="topic-item">Simple harmonic motion (SHM) — defining equation</li>
+            <li class="topic-item">SHM energy</li>
+            <li class="topic-item">Forced oscillations &amp; resonance</li>
+            <li class="topic-item">Damping</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Thermal Physics <span class="topic-count">7</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Thermal energy transfer</li>
+            <li class="topic-item">Internal energy</li>
+            <li class="topic-item">Ideal gas law (pV = nRT)</li>
+            <li class="topic-item">Kinetic theory of gases</li>
+            <li class="topic-item">Boltzmann constant</li>
+            <li class="topic-item">Specific heat capacity</li>
+            <li class="topic-item">Specific latent heat</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Fields <span class="topic-count">12</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Gravitational fields (uniform &amp; radial)</li>
+            <li class="topic-item">Gravitational potential</li>
+            <li class="topic-item">Orbits &amp; Kepler's law</li>
+            <li class="topic-item">Electric fields (uniform &amp; radial)</li>
+            <li class="topic-item">Electric potential</li>
+            <li class="topic-item">Capacitors (charge, energy, time constant)</li>
+            <li class="topic-item">Capacitor charging &amp; discharging</li>
+            <li class="topic-item">Magnetic fields (force on wire &amp; charge)</li>
+            <li class="topic-item">Electromagnetic induction &amp; Faraday's law</li>
+            <li class="topic-item">Lenz's law</li>
+            <li class="topic-item">Transformers</li>
+            <li class="topic-item">Alternating current (RMS, peak)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 3 -->
+    <div class="paper-card phy">
+      <div class="paper-header">
+        <div class="paper-label">Paper 3</div>
+        <div class="paper-title">Nuclear Physics &amp; Astrophysics</div>
+        <div class="paper-date">8 Jun 2026 &nbsp;&bull;&nbsp; 80 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Nuclear Physics <span class="topic-count">7</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Radioactive decay (alpha, beta, gamma)</li>
+            <li class="topic-item">Activity &amp; half-life</li>
+            <li class="topic-item">Radioactive decay equations</li>
+            <li class="topic-item">Nuclear radius</li>
+            <li class="topic-item">Nuclear binding energy</li>
+            <li class="topic-item">Fission &amp; fusion</li>
+            <li class="topic-item">Background radiation</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Astrophysics (Option D) <span class="topic-count">11</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Telescopes (refracting, reflecting, radio)</li>
+            <li class="topic-item">Imaging &amp; detecting radiation</li>
+            <li class="topic-item">Distances in space (parsec, light year, AU)</li>
+            <li class="topic-item">Stellar luminosity &amp; flux</li>
+            <li class="topic-item">Hertzsprung-Russell diagram</li>
+            <li class="topic-item">Stellar evolution (main sequence, giants, white dwarfs, neutron stars)</li>
+            <li class="topic-item">Supernovae &amp; black holes</li>
+            <li class="topic-item">Doppler effect &amp; redshift</li>
+            <li class="topic-item">Hubble's law &amp; the expanding universe</li>
+            <li class="topic-item">Cosmic microwave background radiation</li>
+            <li class="topic-item">Dark matter &amp; dark energy</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MATHS -->
+<div class="subject-panel" id="panel-maths">
+  <div class="subject-title mat">Maths</div>
+  <div class="subject-subtitle">AQA A Level &nbsp;·&nbsp; 3 papers</div>
+
+  <div class="papers-grid">
+
+    <!-- Paper 1 -->
+    <div class="paper-card mat">
+      <div class="paper-header">
+        <div class="paper-label">Paper 1</div>
+        <div class="paper-title">Pure Mathematics (No Calculator)</div>
+        <div class="paper-date">3 Jun 2026 &nbsp;&bull;&nbsp; 100 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Algebra &amp; Functions <span class="topic-count">11</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Algebraic expressions &amp; manipulation</li>
+            <li class="topic-item">Quadratics</li>
+            <li class="topic-item">Equations &amp; inequalities</li>
+            <li class="topic-item">Graphs &amp; transformations</li>
+            <li class="topic-item">Straight-line graphs</li>
+            <li class="topic-item">Circles</li>
+            <li class="topic-item">Algebraic methods (proof, factor theorem)</li>
+            <li class="topic-item">Partial fractions</li>
+            <li class="topic-item">Functions &amp; mappings</li>
+            <li class="topic-item">Composite &amp; inverse functions</li>
+            <li class="topic-item">Modulus function</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Coordinate Geometry <span class="topic-count">2</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Straight-line graphs</li>
+            <li class="topic-item">Circles (equations, chords, tangents)</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Trigonometry <span class="topic-count">10</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Trigonometric ratios &amp; graphs</li>
+            <li class="topic-item">Trig identities (sin²+cos²=1 etc.)</li>
+            <li class="topic-item">Solving trig equations</li>
+            <li class="topic-item">Radians, arc length, sector area</li>
+            <li class="topic-item">Small angle approximations</li>
+            <li class="topic-item">Reciprocal trig functions</li>
+            <li class="topic-item">Inverse trig functions</li>
+            <li class="topic-item">Addition formulae</li>
+            <li class="topic-item">Double angle formulae</li>
+            <li class="topic-item">R cos/sin(θ ± α) form</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Differentiation <span class="topic-count">11</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Differentiation from first principles</li>
+            <li class="topic-item">Differentiating polynomials</li>
+            <li class="topic-item">Chain rule</li>
+            <li class="topic-item">Product rule</li>
+            <li class="topic-item">Quotient rule</li>
+            <li class="topic-item">Differentiating trig functions</li>
+            <li class="topic-item">Differentiating exponentials &amp; logs</li>
+            <li class="topic-item">Implicit differentiation</li>
+            <li class="topic-item">Parametric differentiation</li>
+            <li class="topic-item">Second derivatives &amp; stationary points</li>
+            <li class="topic-item">Rates of change</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Integration <span class="topic-count">8</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Indefinite integration</li>
+            <li class="topic-item">Definite integration</li>
+            <li class="topic-item">Area under a curve</li>
+            <li class="topic-item">Integration by substitution</li>
+            <li class="topic-item">Integration by parts</li>
+            <li class="topic-item">Integrating trig &amp; exponentials</li>
+            <li class="topic-item">Integrating partial fractions</li>
+            <li class="topic-item">Differential equations (separable)</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Vectors <span class="topic-count">5</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">2D vectors</li>
+            <li class="topic-item">3D vectors</li>
+            <li class="topic-item">Magnitude &amp; direction</li>
+            <li class="topic-item">Position vectors</li>
+            <li class="topic-item">Scalar (dot) product</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Proof <span class="topic-count">4</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Proof by deduction</li>
+            <li class="topic-item">Proof by exhaustion</li>
+            <li class="topic-item">Disproof by counter-example</li>
+            <li class="topic-item">Proof by contradiction</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 2 -->
+    <div class="paper-card mat">
+      <div class="paper-header">
+        <div class="paper-label">Paper 2</div>
+        <div class="paper-title">Pure Mathematics (Calculator)</div>
+        <div class="paper-date">11 Jun 2026 &nbsp;&bull;&nbsp; 100 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Exponentials &amp; Logarithms <span class="topic-count">5</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Exponential functions &amp; graphs</li>
+            <li class="topic-item">Logarithms &amp; laws</li>
+            <li class="topic-item">Natural log (ln) &amp; e</li>
+            <li class="topic-item">Solving exponential equations</li>
+            <li class="topic-item">Modelling with exponentials</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Sequences &amp; Series <span class="topic-count">5</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Arithmetic sequences &amp; series</li>
+            <li class="topic-item">Geometric sequences &amp; series</li>
+            <li class="topic-item">Sigma notation</li>
+            <li class="topic-item">Binomial expansion (positive integer)</li>
+            <li class="topic-item">Binomial expansion (any rational n)</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Numerical Methods <span class="topic-count">4</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Locating roots (sign change)</li>
+            <li class="topic-item">Newton-Raphson method</li>
+            <li class="topic-item">Fixed-point iteration</li>
+            <li class="topic-item">Iteration convergence</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Integration <span class="topic-count">1</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Trapezium rule</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 3 -->
+    <div class="paper-card mat">
+      <div class="paper-header">
+        <div class="paper-label">Paper 3</div>
+        <div class="paper-title">Statistics &amp; Mechanics</div>
+        <div class="paper-date">18 Jun 2026 &nbsp;&bull;&nbsp; 100 marks &nbsp;&bull;&nbsp; 2 hrs</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Statistics <span class="topic-count">12</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Statistical sampling</li>
+            <li class="topic-item">Data representation (histograms, box plots, cumulative frequency)</li>
+            <li class="topic-item">Measures of location &amp; spread</li>
+            <li class="topic-item">Coding data</li>
+            <li class="topic-item">Correlation &amp; regression</li>
+            <li class="topic-item">Probability basics</li>
+            <li class="topic-item">Conditional probability</li>
+            <li class="topic-item">Discrete probability distributions</li>
+            <li class="topic-item">Binomial distribution</li>
+            <li class="topic-item">Normal distribution</li>
+            <li class="topic-item">Hypothesis testing (binomial)</li>
+            <li class="topic-item">Hypothesis testing (normal)</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Mechanics <span class="topic-count">7</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Kinematics (constant acceleration, SUVAT)</li>
+            <li class="topic-item">Kinematics (variable acceleration, calculus)</li>
+            <li class="topic-item">Forces &amp; Newton's laws</li>
+            <li class="topic-item">Connected particles</li>
+            <li class="topic-item">Moments</li>
+            <li class="topic-item">Vectors in mechanics</li>
+            <li class="topic-item">Projectile motion</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ BIOLOGY -->
+<div class="subject-panel" id="panel-biology">
+  <div class="subject-title bio">Biology</div>
+  <div class="subject-subtitle">OCR A A Level &nbsp;·&nbsp; 3 papers</div>
+
+  <div class="papers-grid">
+
+    <!-- Paper 1 -->
+    <div class="paper-card bio">
+      <div class="paper-header">
+        <div class="paper-label">Paper 1</div>
+        <div class="paper-title">Breadth in Biology (Modules 2 &amp; 3)</div>
+        <div class="paper-date">4 Jun 2026 &nbsp;&bull;&nbsp; 100 marks &nbsp;&bull;&nbsp; 2 hrs 15 min</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Module 2 — Foundations in Biology <span class="topic-count">16</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Cell structure (prokaryotic &amp; eukaryotic)</li>
+            <li class="topic-item">Microscopy &amp; magnification</li>
+            <li class="topic-item">Cell fractionation &amp; ultracentrifugation</li>
+            <li class="topic-item">Biological molecules — carbohydrates</li>
+            <li class="topic-item">Biological molecules — lipids</li>
+            <li class="topic-item">Biological molecules — proteins &amp; amino acids</li>
+            <li class="topic-item">Enzyme action (lock &amp; key, induced fit)</li>
+            <li class="topic-item">Enzyme inhibition (competitive &amp; non-competitive)</li>
+            <li class="topic-item">Factors affecting enzyme activity</li>
+            <li class="topic-item">Water &amp; its properties</li>
+            <li class="topic-item">DNA &amp; RNA structure</li>
+            <li class="topic-item">ATP structure &amp; hydrolysis</li>
+            <li class="topic-item">Cell membranes (fluid mosaic model)</li>
+            <li class="topic-item">Membrane transport (diffusion, osmosis, active transport)</li>
+            <li class="topic-item">Mitosis &amp; cell cycle</li>
+            <li class="topic-item">Meiosis</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Module 3 — Exchange &amp; Transport <span class="topic-count">12</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Surface area to volume ratio</li>
+            <li class="topic-item">Gas exchange (insects, fish, mammals)</li>
+            <li class="topic-item">Alveoli structure &amp; function</li>
+            <li class="topic-item">Ventilation in mammals</li>
+            <li class="topic-item">Haemoglobin &amp; oxygen dissociation curve</li>
+            <li class="topic-item">Bohr effect</li>
+            <li class="topic-item">Blood vessels (arteries, veins, capillaries)</li>
+            <li class="topic-item">Heart structure &amp; cardiac cycle</li>
+            <li class="topic-item">Pressure changes in the heart</li>
+            <li class="topic-item">Xylem structure &amp; transpiration</li>
+            <li class="topic-item">Factors affecting transpiration</li>
+            <li class="topic-item">Translocation &amp; phloem</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 2 -->
+    <div class="paper-card bio">
+      <div class="paper-header">
+        <div class="paper-label">Paper 2</div>
+        <div class="paper-title">Depth in Biology (Modules 4 &amp; 5)</div>
+        <div class="paper-date">12 Jun 2026 &nbsp;&bull;&nbsp; 100 marks &nbsp;&bull;&nbsp; 2 hrs 15 min</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Module 4 — Biodiversity, Evolution &amp; Disease <span class="topic-count">12</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Pathogens &amp; disease (bacteria, viruses, fungi)</li>
+            <li class="topic-item">Non-specific immune response</li>
+            <li class="topic-item">Specific immune response (B &amp; T lymphocytes)</li>
+            <li class="topic-item">Antibodies &amp; antigens</li>
+            <li class="topic-item">Vaccination</li>
+            <li class="topic-item">HIV &amp; immune system</li>
+            <li class="topic-item">Biodiversity (species richness, Simpson's index)</li>
+            <li class="topic-item">Sampling techniques</li>
+            <li class="topic-item">Classification &amp; taxonomy</li>
+            <li class="topic-item">Darwin's natural selection</li>
+            <li class="topic-item">Speciation (allopatric &amp; sympatric)</li>
+            <li class="topic-item">Genetic drift</li>
+          </ul>
+        </div>
+
+        <div class="section-block">
+          <div class="section-name">Module 5 — Communication, Homeostasis &amp; Energy <span class="topic-count">19</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">Homeostasis principles</li>
+            <li class="topic-item">Thermoregulation</li>
+            <li class="topic-item">Blood glucose regulation (insulin &amp; glucagon)</li>
+            <li class="topic-item">Diabetes (Type 1 &amp; 2)</li>
+            <li class="topic-item">Kidney structure &amp; ultrafiltration</li>
+            <li class="topic-item">Selective reabsorption</li>
+            <li class="topic-item">Osmoregulation &amp; ADH</li>
+            <li class="topic-item">Resting potential</li>
+            <li class="topic-item">Action potential &amp; propagation</li>
+            <li class="topic-item">Synaptic transmission</li>
+            <li class="topic-item">Neuromuscular junction</li>
+            <li class="topic-item">Muscle structure (sarcomere, sliding filament)</li>
+            <li class="topic-item">Photosynthesis — light dependent reactions</li>
+            <li class="topic-item">Photosynthesis — Calvin cycle</li>
+            <li class="topic-item">Limiting factors in photosynthesis</li>
+            <li class="topic-item">Respiration — glycolysis</li>
+            <li class="topic-item">Krebs cycle</li>
+            <li class="topic-item">Oxidative phosphorylation</li>
+            <li class="topic-item">Anaerobic respiration</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Paper 3 -->
+    <div class="paper-card bio">
+      <div class="paper-header">
+        <div class="paper-label">Paper 3</div>
+        <div class="paper-title">Unified Biology (Module 6 + Synoptic)</div>
+        <div class="paper-date">16 Jun 2026 &nbsp;&bull;&nbsp; 70 marks &nbsp;&bull;&nbsp; 1 hr 30 min</div>
+      </div>
+      <div class="paper-content">
+
+        <div class="section-block">
+          <div class="section-name">Module 6 — Genetics, Evolution &amp; Ecosystems <span class="topic-count">21</span></div>
+          <ul class="topic-list">
+            <li class="topic-item">DNA replication</li>
+            <li class="topic-item">Transcription &amp; translation</li>
+            <li class="topic-item">Gene mutations</li>
+            <li class="topic-item">Genetic code (codons, degeneracy)</li>
+            <li class="topic-item">Epigenetics</li>
+            <li class="topic-item">Monohybrid inheritance</li>
+            <li class="topic-item">Dihybrid inheritance</li>
+            <li class="topic-item">Codominance &amp; multiple alleles</li>
+            <li class="topic-item">Sex linkage</li>
+            <li class="topic-item">Hardy-Weinberg principle</li>
+            <li class="topic-item">Ecosystems — trophic levels &amp; food webs</li>
+            <li class="topic-item">Energy flow &amp; efficiency</li>
+            <li class="topic-item">Nitrogen cycle</li>
+            <li class="topic-item">Carbon cycle</li>
+            <li class="topic-item">Succession</li>
+            <li class="topic-item">Conservation methods</li>
+            <li class="topic-item">DNA technology (PCR, gel electrophoresis)</li>
+            <li class="topic-item">Genetic engineering &amp; recombinant DNA</li>
+            <li class="topic-item">GMOs</li>
+            <li class="topic-item">Stem cells</li>
+            <li class="topic-item">Cloning</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showSubject(id, btn) {
+  document.querySelectorAll('.subject-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.subj-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
